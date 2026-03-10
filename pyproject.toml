@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traverse-files"
+version = "1.0.0"
+description = "A fast CLI tool to scan directory"
+dependencies = [
+    "Pillow"
+]
+
+[project.scripts]
+scan = "scan:main"
