@@ -1,0 +1,57 @@
+# --- Python Bytecode & Cache ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Distribution & Build Artifacts ---
+# These are generated when you run 'pip install' or 'build'
+dist/
+build/
+*.egg-info/
+egg-info/
+Seedling.egg-info/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# --- Virtual Environments ---
+# If you use a local venv for testing
+venv/
+.venv/
+env/
+.env/
+bin/
+lib/
+include/
+
+# --- OS Specific Files ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+desktop.ini
+
+# --- Editor Specific ---
+# VS Code
+.vscode/
+# PyCharm / IntelliJ
+.idea/
+
+# --- TreeWeaver Generated Reports ---
+# Ignore the trees and images you generate while testing
+*_tree.md
+*_tree.txt
+*_tree.png
+*_search_*.txt
+*.png
+# Ignore local session state files if created in the project root
+.scan_tool_session_*
+
+# --- Packaging ---
+# If you use 'pipx' or 'pip install -e .'
+pip-wheel-metadata/

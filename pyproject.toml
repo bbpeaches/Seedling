@@ -1,14 +1,16 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "traverse-files"
-version = "1.0.0"
-description = "A fast CLI tool to scan directory"
+name = "Seedling"
+version = "2.0.0"
+description = "A powerful CLI tool to scan, search, and export directory structures"
+requires-python = ">=3.8"
 dependencies = [
-    "Pillow"
+    "Pillow>=9.0.0"
 ]
 
 [project.scripts]
-scan = "scan:main"
+scan = "scan_tool.cli:main"
+build = "scan_tool.cli:build_entry"
