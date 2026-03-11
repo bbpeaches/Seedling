@@ -3,13 +3,28 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Seedling"
-version = "2.0.0"
-description = "A powerful CLI tool to scan, search, and export directory structures"
+name = "Seedling-tools"
+version = "2.1.0"
+description = "A 3-in-1 CLI toolkit to explore, search, and reconstruct directory structures with LLM-ready context support."
+readme = "README.md"
+authors = [
+    { name = "Blue Peach" }
+]
 requires-python = ">=3.8"
+keywords = ["cli", "directory-tree", "llm-context", "scaffolding", "developer-tools"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+]
 dependencies = [
     "Pillow>=9.0.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/bbpeaches/Seedling"
+Issues = "https://github.com/bbpeaches/Seedling/issues"
 
 [project.scripts]
 scan = "scan_tool.cli:main"

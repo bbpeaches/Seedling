@@ -1,0 +1,58 @@
+name: Seedling CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest 
+    
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.10", "3.12", "3.13"]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip' 
+
+    - name: Install Seedling
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Test CLI Commands
+      run: |
+        echo "=== Testing Version Commands ==="
+        scan --version
+        build --version
+        
+        echo "=== Testing Directory Scanning ==="
+        # 扫描当前目录，导出为 txt 格式
+        scan . -F txt -o test_output -n ci_test.txt
+        
+        # 验证文件是否成功生成
+        if [ ! -f "test_output/ci_test.txt" ]; then
+            echo "❌ Scan failed to create output file."
+            exit 1
+        fi
+        
+        echo "=== Testing Direct Build Command ==="
+        # 测试 -d 功能
+        build -d test_output/magic_folder
+        
+        # 验证文件夹是否成功生成
+        if [ ! -d "test_output/magic_folder" ]; then
+            echo "❌ Build failed to create direct directory."
+            exit 1
+        fi
+        
+        echo "✅ All CI tests passed perfectly!"

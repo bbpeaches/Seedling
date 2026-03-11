@@ -6,15 +6,20 @@ A powerful 3-in-1 CLI toolkit to:
 2. FIND: Perform exact and fuzzy searches with automated reports.
 3. BUILD: Construct real file systems from text-based blueprints.
 
-Version: 2.0.0
 Author: Blue Peach
 """
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("Seedling")
+except PackageNotFoundError:
+    __version__ = "dev"
 
 from .cli import main, build_entry
 from .scanner import scan_dir_lines, search_items
 from .builder import build_structure_from_file
 
-__version__ = "2.0.0"
 __author__ = "Blue Peach"
 
 __all__ = [
@@ -22,5 +27,6 @@ __all__ = [
     "build_entry", 
     "scan_dir_lines", 
     "search_items", 
-    "build_structure_from_file"
+    "build_structure_from_file",
+    "__version__"
 ]

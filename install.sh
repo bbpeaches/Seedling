@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================="
-echo " 🌲 TreeWeaver (Seedling) Installer"
+echo " 🌲 Seedling Installer"
 echo "========================================="
 
 if ! command -v python3 &> /dev/null; then

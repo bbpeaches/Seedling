@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo =========================================
-echo  🌲 TreeWeaver (Seedling) Installer
+echo  Seedling Installer
 echo =========================================
 
 python --version >nul 2>&1
@@ -36,10 +36,10 @@ echo [3/3] Finalizing...
 pipx ensurepath >nul 2>&1
 
 echo =========================================
-echo ✅ Installation successful!
+echo   Installation successful!
 echo    - Type 'scan' to explore.
 echo    - Type 'build' to construct.
 echo =========================================
-echo 💡 Tip: If commands aren't found, restart your terminal.
+echo   Tip: If commands aren't found, restart your terminal.
 pause
 exit /b 0

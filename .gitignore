@@ -18,7 +18,6 @@ coverage.xml
 *.log
 
 # --- Virtual Environments ---
-# If you use a local venv for testing
 venv/
 .venv/
 env/
@@ -42,16 +41,20 @@ desktop.ini
 # PyCharm / IntelliJ
 .idea/
 
-# --- TreeWeaver Generated Reports ---
-# Ignore the trees and images you generate while testing
-*_tree.md
-*_tree.txt
-*_tree.png
+# --- TreeWeaver Generated Reports & Local Test & CLI Outputs---
+seedling_test_sandbox_out/
+seedling_test_sandbox/
+*_search_*.md
 *_search_*.txt
+test_output/
+Seedling.md
 *.png
-# Ignore local session state files if created in the project root
-.scan_tool_session_*
+
+# --- Python Tools / Typing ---
+.mypy_cache/
+.tox/
+.coverage
+htmlcov/
 
 # --- Packaging ---
-# If you use 'pipx' or 'pip install -e .'
 pip-wheel-metadata/

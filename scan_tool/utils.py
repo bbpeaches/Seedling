@@ -7,6 +7,15 @@ import time
 import random
 from pathlib import Path
 
+def ask_yes_no(prompt_text):
+    while True:
+        ans = input(prompt_text).strip().lower()
+        if ans in ['y', 'yes']:
+            return True
+        if ans in ['n', 'no']:
+            return False
+        print("⚠️  Invalid input. Please enter 'y' or 'n'.")
+
 def _get_state_file(tool_name): 
     try:
         ppid = os.getppid()
@@ -70,7 +79,7 @@ class SmartArgumentParser(argparse.ArgumentParser):
 def print_welcome_message():
     welcome_text = """
     ==================================================================
-      🌲 Directory Tree Scanner & Builder 🌲
+      🌲 Seedling, A Directory Tree Scanner & Builder 🌲
     ==================================================================
     Welcome! This is a powerful CLI tool designed to explore, search, 
     and construct your directory structures.
@@ -81,8 +90,9 @@ def print_welcome_message():
       
     [ Advanced Features ]
       scan . -f "test"        -> Find files/folders containing "test"
+      scan . --full           -> Scan + Bundle ALL code into one file!
       build my_tree.txt       -> Build a folder structure from a file
-      
+
     [ Need Help? ]
       scan -h                 -> View all advanced options and flags.
     ==================================================================

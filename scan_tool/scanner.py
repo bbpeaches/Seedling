@@ -12,27 +12,22 @@ def print_progress_bar(count, label="Processing", icon="⏳"):
     sys.stdout.write(f"\r{icon} {label}... [{pulse[idx]}] Scanned: {count} items ")
     sys.stdout.flush()
 
-def scan_dir_lines(dir_path, prefix="", max_depth=None, current_depth=0, show_hidden=False, excludes=None, stats=None):
+def scan_dir_lines(dir_path, prefix="", max_depth=None, current_depth=0, show_hidden=False, excludes=None, stats=None, highlights=None):
     """
-    Recursively generate each line of the directory tree and count files/directories.
+    Recursively generate each line of the directory tree.
+    If 'highlights' (a set of Path objects) is provided, append a match marker.
     """
-    if excludes is None:
-        excludes = []
-    if stats is None:
-        stats = {"dirs": 0, "files": 0}
+    if excludes is None: excludes = []
+    if stats is None: stats = {"dirs": 0, "files": 0}
+    if highlights is None: highlights = set()
         
     lines = []
-    if max_depth is not None and current_depth > max_depth:
-        return lines
-
+    if max_depth is not None and current_depth > max_depth: return lines
     path = Path(dir_path)
-    
+
     try:
         items = list(path.iterdir())
-        valid_items = [
-            item for item in items 
-            if not (not show_hidden and item.name.startswith('.')) and item.name not in excludes
-        ]
+        valid_items = [item for item in items if not (not show_hidden and item.name.startswith('.')) and item.name not in excludes]
         valid_items.sort(key=lambda x: (not x.is_dir(), x.name.lower()))
     except PermissionError:
         lines.append(f"{prefix}└── [Permission Denied]")
@@ -43,7 +38,9 @@ def scan_dir_lines(dir_path, prefix="", max_depth=None, current_depth=0, show_hi
         connector = "└── " if is_last else "├── "
         symlink_mark = " (symlink)" if item.is_symlink() else ""
         
-        lines.append(f"{prefix}{connector}{item.name}{symlink_mark}")
+        match_mark = " 🎯 [MATCHED]" if item in highlights else ""
+        
+        lines.append(f"{prefix}{connector}{item.name}{symlink_mark}{match_mark}")
         
         if item.is_dir():
             stats["dirs"] += 1
@@ -52,12 +49,11 @@ def scan_dir_lines(dir_path, prefix="", max_depth=None, current_depth=0, show_hi
                 lines.extend(scan_dir_lines(
                     item, prefix=prefix + extension, max_depth=max_depth, 
                     current_depth=current_depth + 1, show_hidden=show_hidden,
-                    excludes=excludes, stats=stats
+                    excludes=excludes, stats=stats, highlights=highlights
                 ))
         else:
             stats["files"] += 1
             
-        # [ NEW ] Dynamic Progress Bar for Scan
         total_scanned = stats["dirs"] + stats["files"]
         if total_scanned % 15 == 0:
             print_progress_bar(total_scanned, label="Scanning", icon="⏳")
@@ -121,3 +117,48 @@ def search_items(dir_path, keyword, show_hidden=False, excludes=None):
     fuzzy_matches = [all_names[name] for name in close_names]
     
     return exact_matches, fuzzy_matches
+
+def is_text_file(file_path):
+    """
+    Check if a file is likely a text/source file based on extension.
+    """
+    text_extensions = {
+        '.py', '.js', '.ts', '.c', '.cpp', '.h', '.java', '.go', '.rs',
+        '.html', '.css', '.md', '.txt', '.json', '.yaml', '.yml', '.toml',
+        '.xml', '.sh', '.bat', '.ps1', '.sql', '.ini', '.cfg'
+    }
+    return file_path.suffix.lower() in text_extensions
+
+def get_full_context(target_path, show_hidden=False, excludes=None):
+    """
+    Traverse the directory and collect contents of all text files.
+    """
+    if excludes is None: excludes = []
+    context_data = []
+    
+    # We'll reuse our walk logic
+    def walk(current_path):
+        try:
+            items = sorted(list(current_path.iterdir()), key=lambda x: (not x.is_dir(), x.name.lower()))
+            for item in items:
+                if not show_hidden and item.name.startswith('.'): continue
+                if item.name in excludes: continue
+                
+                if item.is_file() and is_text_file(item):
+                    try:
+                        # Update progress bar icon to 'Reading'
+                        sys.stdout.write(f"\r📖 Reading: {item.name[:30]}... ")
+                        sys.stdout.flush()
+                        
+                        content = item.read_text(encoding='utf-8', errors='replace')
+                        rel_path = item.relative_to(target_path)
+                        context_data.append((rel_path, content))
+                    except Exception:
+                        pass # Skip files that can't be read
+                elif item.is_dir() and not item.is_symlink():
+                    walk(item)
+        except PermissionError:
+            pass
+
+    walk(target_path)
+    return context_data
