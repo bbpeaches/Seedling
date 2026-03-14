@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo =========================================
-echo  Seedling Installer
+echo          Seedling Installer
 echo =========================================
 
 python --version >nul 2>&1

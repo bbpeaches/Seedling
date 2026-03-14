@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================="
-echo " 🌲 Seedling Installer"
+echo "         Seedling Installer"
 echo "========================================="
 
 if ! command -v python3 &> /dev/null; then
@@ -30,7 +30,7 @@ echo "[3/3] Finalizing installation..."
 pipx ensurepath >/dev/null 2>&1
 
 echo "========================================="
-echo "✅ Installation successful!"
+echo "   Installation successful!"
 echo "   - Type 'scan' to explore directories."
 echo "   - Type 'build' to construct structures."
 echo "========================================="
