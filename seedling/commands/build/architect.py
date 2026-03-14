@@ -118,7 +118,12 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
 
     for posix_rel, content in file_contents.items():
         if posix_rel not in handled_files:
-            current_path = target_path / posix_rel
+            current_path = (target_path / posix_rel).resolve()
+
+            if not current_path.is_relative_to(target_path.resolve()):
+                print(f" 🚫 Blocked (Security): 📄 {posix_rel} (Attempted path traversal)")
+                continue
+            
             try:
                 current_path.parent.mkdir(parents=True, exist_ok=True)
                 if current_path.exists() and not force_mode:

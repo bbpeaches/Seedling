@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-03-13
+
+### 🚨 Security Hotfixes
+- **Path Traversal Prevention (Build Engine)**: Patched a critical zero-day vulnerability in `architect.py` where maliciously crafted or malformed markdown blueprints could write files outside the intended target directory (e.g., overwriting system files via `../../../`). Strict `.is_relative_to()` absolute path boundary checks are now enforced during all raw source code restorations.
+
+### 🐛 Bug Fixes
+- **Windows Startup Crash**: Fixed a fatal `NameError` caused by a missing `import io` in the terminal UTF-8 initialization block. Windows users can now run `scan` and `build` commands without instantly crashing.
+- **Fuzzy Search Completeness**: Rewrote the internal dictionary memory into a list-tuple structure for the `find` engine. Fixed a severe bug where files sharing the exact same name across different nested folders (e.g., multiple `utils.py`) would silently overwrite each other in the search index.
+- **Tree UI Rendering**: Fixed a visual formatting bug where encountering a `PermissionError` on a locked directory would break the tree drawing with a disjointed, hardcoded `└──` branch.
+
+### ✨ Enhancements & API Polish
+- **API Quiet Mode (`quiet=True`)**: Core functions (`scan_dir_lines`, `search_items`, `get_full_context`) now fully support a `quiet` parameter. When Seedling is imported as a Python library, this prevents progress bars, emojis, and CLI logs from polluting the host server's standard output.
+- **Smarter Text Filter (`--text`)**: The engine now intelligently recognizes and whitelists extension-less core configuration files (e.g., `Makefile`, `Dockerfile`, `LICENSE`) and hidden dotfiles (e.g., `.gitignore`, `.env`) that were previously skipped.
+- **Expanded C++ & CUDA Support**: Massively expanded the default text-file whitelist to include C/C++ variants (`.cc`, `.cxx`, `.hpp`, `.inl`, etc.), CUDA files (`.cu`, `.cuh`), and C# (`.cs`), ensuring zero code loss during `--full` aggregation on complex low-level engineering projects.
+- **GC Performance Boost**: Extracted high-frequency set allocations in the file-checking loop into module-level global constants, noticeably reducing memory overhead and Garbage Collection lag when scanning massive repositories (50,000+ files).
+
 ## [2.2.0] - 2026-03-13
 
 ### 🚀 Architectural Overhaul & API
@@ -53,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dual Command System**: Evolved from a single-command utility into a versatile toolkit by officially splitting the tool into two distinct commands: `scan` (for exploring) and `build` (for constructing).
 - **Project Scaffolding (`build`)**: Introduced the ability to read a text-based tree diagram (from a `.txt` or `.md` blueprint) and physically create the corresponding folders and files on the local file system.
 
-## [1.0.0] - Initial Release
+## [1.0.0] - 2026-03-10 - Initial Release
 
 ### 🎉 First Public Release
 - **Directory Explorer (`scan`)**: The core functionality to traverse directories and generate visual tree representations.

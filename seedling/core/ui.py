@@ -3,10 +3,11 @@ import os
 import tempfile
 import time
 import random
+import io
 from pathlib import Path
 
 def ensure_utf8_output():
-    if sys.platform == "win32":
+    if sys.platform == "win32" and hasattr(sys.stdout, 'buffer'):
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 

@@ -1,4 +1,4 @@
-# 🌲 Seedling (v2.2.0)
+# 🌲 Seedling (v2.2.1)
 
 [![Seedling CI](https://img.shields.io/github/actions/workflow/status/bbpeaches/Seedling/ci.yml?branch=main&style=flat-square)](https://github.com/bbpeaches/Seedling/actions)
 [![PyPI version](https://img.shields.io/pypi/v/seedling-tools.svg?style=flat-square&color=blue)](https://pypi.org/project/Seedling-tools/)
@@ -11,11 +11,12 @@
 
 ## 🚀 Key Features
 
-* **Modular Architecture [NEW]**: Version 2.2.0 introduces a completely rebuilt core engine, separating commands and core logic for infinite scaling and professional maintenance.
-* **Public Python API [NEW]**: Seedling is now a library! You can `import seedling` in your scripts to use its powerful scanning and building engines programmatically.
+* **Modular Architecture**: A completely rebuilt core engine, separating commands and core logic for infinite scaling and professional maintenance.
+* **Public Python API (Quiet Mode) [NEW]**: Seedling is now a library! You can `import seedling` in your scripts to use its powerful scanning and building engines programmatically, now with a silent `quiet=True` mode for clean server logs.
 * **Context Rehydration 🌟**: Generate a project snapshot using `scan --full`, and use `build` to flawlessly restore the *entire* directory structure along with the original source code.
-* **Smart Text Filter (`--text`) [NEW]**: Strictly ignore binary and media files during tree scanning and searching, ensuring your output remains clean and code-focused.
-* **Dangerous Deletion (`--delete`) [NEW]**: Search for files or folders and permanently wipe them out with a built-in safety lock.
+* **Smart Text Filter (`--text`)**: Strictly ignore binary and media files during tree scanning and searching. Intelligently whitelists extension-less files (Makefile, Dockerfile) and hidden dotfiles.
+* **C++/CUDA Ecosystem Support [NEW]**: Deeply integrated support for low-level system files (`.cc`, `.cxx`, `.hpp`, `.cu`, `.cuh`, `.cs`) ensuring zero code loss during context aggregation.
+* **Dangerous Deletion (`--delete`)**: Search for files or folders and permanently wipe them out with a built-in safety lock.
 * **Scan & Export**: Export directory trees to `Markdown`, `Plain Text`, or high-fidelity `PNG` images with full Chinese character support and automatic trailing slashes for directories.
 * **Reverse Scaffolding**: Use the `build` command to read any tree diagram (even those copied from a README) and instantly recreate the folder/file hierarchy.
 
@@ -47,12 +48,12 @@ You can now use Seedling's core features directly in your Python code:
 ```python
 import seedling
 
-# Generate directory tree lines
-lines = seedling.scan_dir_lines("./src", max_depth=2)
+# Generate directory tree lines (Use quiet=True to suppress CLI output)
+lines = seedling.scan_dir_lines("./src", max_depth=2, quiet=True)
 print("\n".join(lines))
 
 # Search for specific items
-exact, fuzzy = seedling.search_items(".", keyword="utils")
+exact, fuzzy = seedling.search_items(".", keyword="utils", quiet=True)
 
 # Reconstruct a project from a blueprint
 seedling.build_structure_from_file("blueprint.md", "./new_project")
@@ -62,7 +63,7 @@ seedling.build_structure_from_file("blueprint.md", "./new_project")
 
 ## 📖 CLI Reference
 
-Seedling 2.2.0 uses a clean, explicit argument system. All ambiguous short flags have been removed to ensure readability.
+Seedling 2.2.1 uses a clean, explicit argument system. All ambiguous short flags have been removed to ensure readability.
 
 ### 1. `scan` - The Explorer
 
@@ -98,7 +99,7 @@ Turn a text-based tree into a real file system, or restore a project from a snap
 
 ---
 
-## 📂 Project Structure (v2.2.0)
+## 📂 Project Structure (v2.2.1)
 
 ```text
 Seedling/
@@ -123,19 +124,22 @@ Seedling/
 
 Seedling is built to be unbreakable. It includes:
 
+* **Path Traversal Prevention [NEW]**: Strict `.is_relative_to()` boundary checks during build operations to completely prevent zero-day directory escape attacks.
 * **Memory Protection**: Automatically skips files larger than 2MB during `--full` scans to prevent crashes.
 * **Graceful Interruptions**: `Ctrl+C` safe. It saves your progress even if you stop a scan midway.
 * **Symlink Loop Defense**: Detects and ignores infinite directory loops.
-* **Path Traversal Prevention**: Safely handles complex path combinations during construction.
+* **Terminal Safety**: Built-in UTF-8 encodings to prevent Windows terminal startup crashes.
 
 ---
 
 ## 📜 Changelog
 
-Detailed changes for each release are documented in the [CHANGELOG.md](./CHANGELOG.md) file.
+Detailed changes for each release are documented in the [CHANGELOG.md](https://www.google.com/search?q=./CHANGELOG.md) file.
 
-### Latest Update: v2.2.0
-- **Modular Architecture**: Completely rebuilt core engine for scalability.
-- **Public API**: Use Seedling as a Python library.
-- **Cleanup Mode**: Added `--delete` to remove matched files.
-- **Smart Filter**: Added `--text` to ignore binary/media files.
+### Latest Update: v2.2.1 (The Sentinel Patch)
+
+* **Security Hotfix**: Patched a critical Path Traversal vulnerability in the build engine.
+* **Windows Fix**: Resolved a fatal `NameError` startup crash affecting Windows users.
+* **API Quiet Mode**: Added `quiet=True` support for clean library integration without CLI pollution.
+* **Expanded Ecosystem**: Full context aggregation support for C/C++, CUDA, and C# files.
+* **Search Robustness**: Fixed a severe fuzzy search bug where identically named files would overwrite each other in the index.
