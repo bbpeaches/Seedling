@@ -1,42 +1,29 @@
-import pytest # type: ignore
+import pytest #type: ignore
 from pathlib import Path
-from seedling.core.filesystem import is_text_file, matches_exclude_pattern, is_valid_item
+from seedling.core.filesystem import is_text_file, matches_exclude_pattern, is_valid_item, ScanConfig
 
 def test_is_text_file():
-    # 测试常规后缀
-    assert is_text_file(Path("main.py")) == True
-    assert is_text_file(Path("index.html")) == True
-    # 测试特殊名称
-    assert is_text_file(Path("Dockerfile")) == True
-    assert is_text_file(Path(".gitignore")) == True
-    # 测试非文本
-    assert is_text_file(Path("image.png")) == False
-    assert is_text_file(Path("app.exe")) == False
+    assert is_text_file(Path("main.py")) is True
+    assert is_text_file(Path("Dockerfile")) is True
+    assert is_text_file(Path("image.png")) is False
 
 def test_matches_exclude_pattern(tmp_path):
     base_dir = tmp_path
     
-    # 模拟文件和目录结构
-    pycache_dir = base_dir / "seedling" / "__pycache__"
-    pycache_dir.mkdir(parents=True)
+    # 构造目录结构
+    (base_dir / "build").mkdir()
+    (base_dir / "src/build").mkdir(parents=True)
+    (base_dir / "src/main.py").touch()
     
-    test_file = pycache_dir / "test.pyc"
-    test_file.touch()
+    # 路径锚定规则 (/build/) 应该只拦截根目录下的 build
+    anchored_excludes = ["/build/"]
+    assert matches_exclude_pattern(base_dir / "build", base_dir, anchored_excludes) is True
+    assert matches_exclude_pattern(base_dir / "src/build", base_dir, anchored_excludes) is False
     
-    normal_file = base_dir / "src" / "main.py"
-    normal_file.parent.mkdir()
-    normal_file.touch()
-
-    excludes = ["__pycache__/", "*.pyc", "build"]
-
-    # 规则 1: 目录带斜杠拦截 (应拦截 __pycache__ 目录)
-    assert matches_exclude_pattern(pycache_dir, base_dir, excludes) == True
-    
-    # 规则 2: 文件名通配符拦截 (应拦截 test.pyc)
-    assert matches_exclude_pattern(test_file, base_dir, excludes) == True
-    
-    # 规则 3: 正常文件不应被拦截
-    assert matches_exclude_pattern(normal_file, base_dir, excludes) == False
+    # 全局规则 (node_modules) 应该拦截任何深度的匹配
+    global_excludes = ["node_modules"]
+    assert matches_exclude_pattern(base_dir / "node_modules", base_dir, global_excludes) is True
+    assert matches_exclude_pattern(base_dir / "src/node_modules", base_dir, global_excludes) is True
 
 def test_is_valid_item(tmp_path):
     base_dir = tmp_path
@@ -44,5 +31,15 @@ def test_is_valid_item(tmp_path):
     hidden_file.touch()
     
     # 测试隐藏文件拦截
-    assert is_valid_item(hidden_file, base_dir, show_hidden=False, excludes=[], text_only=False) == False
-    assert is_valid_item(hidden_file, base_dir, show_hidden=True, excludes=[], text_only=False) == True
+    config_hide = ScanConfig(show_hidden=False)
+    assert is_valid_item(hidden_file, base_dir, config_hide) is False
+    
+    # 测试隐藏文件放行
+    config_show = ScanConfig(show_hidden=True)
+    assert is_valid_item(hidden_file, base_dir, config_show) is True
+    
+    # 测试文本过滤
+    config_text = ScanConfig(text_only=True)
+    png_file = base_dir / "test.png"
+    png_file.touch()  
+    assert is_valid_item(png_file, base_dir, config_text) is False

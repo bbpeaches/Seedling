@@ -36,12 +36,12 @@ def test_expand_excludes_interactive_prompt(mock_ask, tmp_path):
     os.chdir(tmp_path)
     
     try:
-        # 1. 模拟用户输入 "n" (不作为规则文件读取，当作纯 glob 字符串)
+        # 模拟用户输入 "n" (不作为规则文件读取，当作纯 glob 字符串)
         mock_ask.return_value = False
         result_no = expand_excludes(["my_rules.txt"])
         assert result_no == ["my_rules.txt"]
         
-        # 2. 模拟用户输入 "y" (读取文件内容)
+        # 模拟用户输入 "y" (读取文件内容)
         mock_ask.return_value = True
         result_yes = expand_excludes(["my_rules.txt"])
         assert "secret_dir" in result_yes

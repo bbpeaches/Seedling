@@ -42,5 +42,5 @@ def test_extract_skeleton_syntax_error_fallback():
     # 故意制造语法错误的代码
     bad_code = "def broken_func(a, b) return a+b"
     result = extract_skeleton(bad_code)
-    # 发生语法错误时，引擎应当优雅降级，返回原代码而不崩溃
+    # 发生语法错误时，引擎应当降级，返回原代码而不崩溃
     assert result == bad_code

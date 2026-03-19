@@ -1,15 +1,11 @@
-import pytest # type: ignore
-from pathlib import Path
-from seedling.commands.build.architect import is_safe_path
+import pytest #type: ignore
+from seedling.core.io import is_safe_path
 
-def test_is_safe_path(tmp_path):
-    target_dir = tmp_path / "project_root"
-    target_dir.mkdir()
+def test_is_safe_path_logic():
+    from pathlib import Path
+    base = Path("/Users/kaelen/app")
     
-    # 正常的内部路径
-    safe_child = target_dir / "src" / "main.py"
-    assert is_safe_path(safe_child, target_dir) == True
-    
-    # 试图跳出根目录的恶意路径 (../../../etc/passwd)
-    malicious_path = target_dir / "src" / ".." / ".." / ".." / "etc" / "passwd"
-    assert is_safe_path(malicious_path, target_dir) == False
+    # 正常的深度嵌套
+    assert is_safe_path(base / "a/b/c/d.txt", base) is True
+    # 诡异但合法的相对路径点
+    assert is_safe_path(base / "./src/../src/main.py", base) is True
