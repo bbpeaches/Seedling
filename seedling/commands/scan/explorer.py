@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from seedling.core.filesystem import scan_dir_lines
+from seedling.core.filesystem import scan_dir_lines, ScanConfig
 from seedling.core.io import create_image_from_text
 from seedling.core.ui import ask_yes_no
 from seedling.core.logger import logger
@@ -26,15 +26,14 @@ def run_explorer(args, target_path):
             return
     
     stats = {"dirs": 0, "files": 0}
-    lines = scan_dir_lines(
-        target_path, 
+    config = ScanConfig(
         max_depth=args.depth,
-        show_hidden=args.show_hidden, 
-        excludes=args.exclude, 
-        stats=stats, 
+        show_hidden=args.show_hidden,
+        excludes=args.exclude,
         text_only=args.text_only,
         quiet=args.quiet
     )
+    lines = scan_dir_lines(target_path, config, stats)
     
     if not args.quiet:
         sys.stdout.write(f"\r✅ Scan Complete! [ 📁 {stats['dirs']} dirs | 📄 {stats['files']} files ]            \n")
@@ -45,7 +44,7 @@ def run_explorer(args, target_path):
     
     full_content = ""
     if args.full:
-        full_content = run_full(args, target_path)
+        full_content = run_full(args, target_path, config)
         if args.format == 'image':
             args.format = 'md'
             final_file = final_file.with_suffix('.md')

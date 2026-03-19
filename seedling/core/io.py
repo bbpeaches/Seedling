@@ -4,6 +4,33 @@ import re
 from pathlib import Path, PureWindowsPath
 from .logger import logger
 
+def is_safe_path(path: Path, base_dir: Path) -> bool:
+    """跨平台的路径安全边界检查"""
+    try:
+        p_resolved = Path(path).resolve()
+        base_resolved = Path(base_dir).resolve()
+        if sys.version_info >= (3, 9):
+            return p_resolved.is_relative_to(base_resolved)
+        else:
+            try:
+                p_resolved.relative_to(base_resolved)
+                return True
+            except ValueError:
+                return False
+    except Exception:
+        return False
+
+def get_dynamic_fence(content: str) -> str:
+    """计算包裹内容所需的最小反引号数量"""
+    max_ticks = 2
+    for line in content.split('\n'):
+        stripped = line.strip()
+        if stripped.startswith('`'):
+            ticks = len(stripped) - len(stripped.lstrip('`'))
+            if ticks > max_ticks:
+                max_ticks = ticks
+    return '`' * (max_ticks + 1)
+
 def extract_tree_block(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f: 

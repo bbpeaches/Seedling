@@ -2,7 +2,7 @@ import sys
 import ast
 from pathlib import Path
 from seedling.core.logger import logger
-from seedling.core.filesystem import get_full_context
+from seedling.core.filesystem import get_full_context, ScanConfig
 from seedling.core.ui import ask_yes_no
 
 class SkeletonTransformer(ast.NodeTransformer):
@@ -51,15 +51,15 @@ def run_skeleton(args, target_path):
 
     logger.info(f"\n🦴 Skeleton mode activated! Extracting Python code structure from {target_path}...")
     
-    # 复用 get_full_context，但强制开启 text_only 过滤
-    context_list = get_full_context(
-        target_path, 
-        show_hidden=args.show_hidden, 
-        excludes=args.exclude,
-        text_only=True,
+    config = ScanConfig(
         max_depth=args.depth,
+        show_hidden=args.show_hidden,
+        excludes=args.exclude,
+        text_only=True, 
         quiet=args.quiet
     )
+
+    context_list = get_full_context(target_path, config)
 
     out_dir_path = Path(args.outdir).resolve() if args.outdir else Path.cwd()
     out_dir_path.mkdir(parents=True, exist_ok=True)

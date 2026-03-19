@@ -2,21 +2,14 @@ import re
 import sys
 from pathlib import Path
 from seedling.core.ui import ask_yes_no
-from seedling.core.io import extract_tree_block, extract_file_contents
+from seedling.core.io import extract_tree_block, extract_file_contents, is_safe_path
 from seedling.core.logger import logger
 
-def is_safe_path(path, target):
-    target_real = target.resolve()
-    path_real = path.resolve()
-    
-    if sys.version_info >= (3, 9):
-        return path_real.is_relative_to(target_real)
-    else:
-        try:
-            path_real.relative_to(target_real)
-            return True
-        except ValueError:
-            return False
+def calculate_depth(prefix):
+    """基于前缀字符计算实际嵌套深度"""
+    if not prefix: return 0
+    clean_prefix = prefix.replace('│', ' ').replace('├', ' ').replace('└', ' ').replace('─', ' ')
+    return len(clean_prefix) // 4
 
 def build_structure_from_file(source_file, target_dir, check_mode=False, force_mode=False):
     tree_lines = extract_tree_block(source_file)
@@ -37,7 +30,7 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
         if not match: continue
             
         prefix, content = match.groups()
-        depth = len(prefix) 
+        depth = calculate_depth(prefix)
         
         clean_name = content.split('<-')[0].strip()
         clean_name = re.split(r'\s{2,}#', clean_name)[0].strip()

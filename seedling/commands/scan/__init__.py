@@ -22,11 +22,21 @@ def setup_scan_parser(parser):
     parser.add_argument("-q", "--quiet", action="store_true", help="Only show errors")
     parser.add_argument("--showhidden", dest="show_hidden", action="store_true", help="Include hidden files")
     parser.add_argument("--text", dest="text_only", action="store_true", help="Only scan text files (ignore binary/media)")
-    parser.add_argument("--full", action="store_true", help="POWER MODE: Gather full content")
     parser.add_argument("--delete", action="store_true", help="Delete matched items (FIND MODE ONLY)")
-    parser.add_argument("--skeleton", action="store_true", help="[Experimental] AST Code Skeleton extraction")
     parser.add_argument("--noemoji", dest="no_emoji", action="store_true", help="Disable emojis for legacy terminals")
 
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument(
+        "--full", 
+        action="store_true", 
+        help="POWER MODE: Gather full text content of scanned files."
+    )
+    output_mode.add_argument(
+        "--skeleton", 
+        action="store_true", 
+        help="[Experimental] AST Code Skeleton extraction (strips implementation logic)."
+    )
+    
 def handle_scan(args):
     configure_logging(args.verbose, args.quiet)
     setup_ui_theme(args.no_emoji)
