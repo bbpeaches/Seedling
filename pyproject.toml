@@ -28,6 +28,12 @@ dependencies = [
     "Pillow>=9.0.0"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0"
+]
+
 [project.urls]
 Homepage = "https://github.com/bbpeaches/Seedling"
 Repository = "https://github.com/bbpeaches/Seedling.git"
