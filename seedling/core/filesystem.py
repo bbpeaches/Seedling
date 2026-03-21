@@ -15,14 +15,31 @@ HARD_DEPTH_LIMIT = min(get_system_depth_limit(), MAX_ITERATION_DEPTH)
 
 SPECIAL_TEXT_NAMES = {'makefile', 'dockerfile', 'license', 'caddyfile', 'procfile'}
 TEXT_EXTENSIONS = {
-    '.c', '.h', '.cpp', '.cc', '.cxx', '.c++', '.cp',         
-    '.hpp', '.hxx', '.h++', '.hh', '.inc', '.inl', 
-    '.cu', '.cuh',                                           
+    '.c', '.h', '.cpp', '.cc', '.cxx', '.c++', '.cp',
+    '.hpp', '.hxx', '.h++', '.hh', '.inc', '.inl',
+    '.cu', '.cuh',
     '.py', '.js', '.ts', '.java', '.go', '.rs', '.cs',
-    '.html', '.css', '.md', '.txt', 
-    '.json', '.yaml', '.yml', '.toml', '.xml', 
+    '.html', '.css', '.md', '.txt',
+    '.json', '.yaml', '.yml', '.toml', '.xml',
     '.ini', '.cfg', '.csv',
     '.sh', '.bat', '.ps1', '.sql'
+}
+
+# File type mapping for --type filtering
+FILE_TYPE_MAP = {
+    'py': {'.py', '.pyw', '.pyi'},
+    'js': {'.js', '.mjs', '.cjs', '.jsx'},
+    'ts': {'.ts', '.tsx'},
+    'cpp': {'.c', '.h', '.cpp', '.hpp', '.cc', '.cxx'},
+    'go': {'.go'},
+    'java': {'.java'},
+    'rs': {'.rs'},
+    'web': {'.html', '.css', '.scss', '.vue', '.svelte'},
+    'json': {'.json'},
+    'yaml': {'.yaml', '.yml'},
+    'md': {'.md', '.markdown'},
+    'shell': {'.sh', '.bash', '.zsh'},
+    'all': None  # Special case - matches all
 }
 
 # Dataclass
@@ -32,9 +49,12 @@ class ScanConfig:
     max_depth: Optional[int] = None
     show_hidden: bool = False
     excludes: List[str] = field(default_factory=list)
+    includes: List[str] = field(default_factory=list)  # NEW: Include patterns
     text_only: bool = False
+    file_type: Optional[str] = None  # NEW: File type filter
     quiet: bool = False
     highlights: Set[Path] = field(default_factory=set)
+    use_regex: bool = False  # NEW: Regex mode for search
 
 # 底层探测函数
 
@@ -94,15 +114,65 @@ def matches_exclude_pattern(item_path: Path, base_dir: Path, exclude_patterns: L
                     return True
     return False
 
+def matches_include_pattern(item_path: Path, base_dir: Path, include_patterns: List[str]) -> bool:
+    """
+    检查路径是否匹配 Include 过滤规则
+    Supports glob patterns like **/*.py, *.md, src/**
+    """
+    if not include_patterns:
+        return True
+
+    rel_path = item_path.relative_to(base_dir)
+    item_name = item_path.name
+
+    for pattern in include_patterns:
+        # Normalize pattern
+        clean = pattern.lstrip('/')
+
+        # Match file name directly (e.g., "*.py")
+        if fnmatch.fnmatch(item_name, clean):
+            return True
+
+        # Use pathlib's match for glob patterns (supports **/*.py)
+        try:
+            if rel_path.match(pattern) or rel_path.match(clean):
+                return True
+            # Also try matching as if pattern is relative
+            if pattern.startswith('**/'):
+                if rel_path.match(pattern[3:]):
+                    return True
+        except (ValueError, TypeError):
+            pass
+
+        # Match path segment (e.g., "*/{pattern}" or "**/{pattern}")
+        rel_str = rel_path.as_posix()
+        if fnmatch.fnmatch(rel_str, clean) or fnmatch.fnmatch(rel_str, f"*/{clean}"):
+            return True
+
+    return False
+
 def is_valid_item(item: Path, base_dir: Path, config: ScanConfig) -> bool:
     """综合校验文件/目录是否应包含在结果中"""
-    if not config.show_hidden and item.name.startswith('.'): 
+    if not config.show_hidden and item.name.startswith('.'):
         return False
-    
+
     if matches_exclude_pattern(item, base_dir, config.excludes):
         return False
-        
-    if config.text_only and item.is_file() and not is_text_file(item): 
+
+    # NEW: Include filter - must match at least one pattern if specified
+    # NOTE: Directories are always allowed through for traversal purposes
+    # The actual filtering of results happens at output time
+    if config.includes and item.is_file():
+        if not matches_include_pattern(item, base_dir, config.includes):
+            return False
+
+    # NEW: File type filter
+    if config.file_type and item.is_file():
+        allowed = FILE_TYPE_MAP.get(config.file_type.lower())
+        if allowed and item.suffix.lower() not in allowed:
+            return False
+
+    if config.text_only and item.is_file() and not is_text_file(item):
         return False
     return True
 
@@ -197,12 +267,24 @@ def scan_dir_lines(dir_path: Path, config: ScanConfig, stats: Dict[str, int]) ->
 # 检索与聚合
 
 def search_items(dir_path: Path, keyword: str, config: ScanConfig) -> Tuple[List[Path], List[Path]]:
-    """搜索文件和文件夹"""
+    """搜索文件和文件夹，支持正则表达式"""
+    import re
     exact_matches: List[Path] = []
     all_seen: List[Tuple[str, Path]] = []
-    keyword_lower = keyword.lower()
     base_dir = dir_path.resolve()
     count = 0
+
+    # Compile regex if enabled
+    regex_pattern = None
+    if config.use_regex:
+        try:
+            regex_pattern = re.compile(keyword, re.IGNORECASE)
+        except re.error as e:
+            logger.error(f"Invalid regex pattern: {e}")
+            return [], []
+        keyword_lower = None
+    else:
+        keyword_lower = keyword.lower()
 
     stack = [dir_path]
     while stack:
@@ -210,11 +292,17 @@ def search_items(dir_path: Path, keyword: str, config: ScanConfig) -> Tuple[List
         try:
             for item in curr.iterdir():
                 if not is_valid_item(item, base_dir, config): continue
-                
+
                 count += 1
                 all_seen.append((item.name, item))
-                if keyword_lower in item.name.lower():
-                    exact_matches.append(item)
+
+                # Match using regex or substring
+                if config.use_regex and regex_pattern:
+                    if regex_pattern.search(item.name):
+                        exact_matches.append(item)
+                else:
+                    if keyword_lower in item.name.lower():
+                        exact_matches.append(item)
                 
                 if count % 15 == 0:
                     print_progress_bar(count, label="Searching", icon="🔍", quiet=config.quiet)
@@ -223,10 +311,12 @@ def search_items(dir_path: Path, keyword: str, config: ScanConfig) -> Tuple[List
                     stack.append(item)
         except PermissionError: pass
 
-    # 模糊匹配逻辑
-    unique_names = list(set([n for n, p in all_seen]))
-    close_names = difflib.get_close_matches(keyword, unique_names, n=10, cutoff=0.7)
-    fuzzy_matches = [p for n, p in all_seen if n in close_names and p not in exact_matches]
+    # 模糊匹配逻辑 (skip for regex mode)
+    fuzzy_matches = []
+    if not config.use_regex:
+        unique_names = list(set([n for n, p in all_seen]))
+        close_names = difflib.get_close_matches(keyword, unique_names, n=10, cutoff=0.7)
+        fuzzy_matches = [p for n, p in all_seen if n in close_names and p not in exact_matches]
 
     return exact_matches, fuzzy_matches
 

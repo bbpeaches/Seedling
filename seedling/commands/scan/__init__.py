@@ -13,7 +13,7 @@ def setup_scan_parser(parser):
     parser.add_argument("--version", action="version", version=f"Seedling v{__version__}")
     parser.add_argument("target", nargs="?", default=".", help="Target directory for scanning or searching")
     parser.add_argument("-f", "--find", type=str, help="FIND MODE: Search items (Exact & Fuzzy)")
-    parser.add_argument("-F", "--format", choices=["md", "txt", "image"], default="md", help="Output format")
+    parser.add_argument("-F", "--format", choices=["md", "txt", "image", "json"], default="md", help="Output format")
     parser.add_argument("-n", "--name", help="Custom output filename")
     parser.add_argument("-o", "--outdir", help="Output directory path")
     parser.add_argument("-d", "--depth", type=int, default=None, help="Maximum recursion depth")
@@ -25,15 +25,35 @@ def setup_scan_parser(parser):
     parser.add_argument("--delete", action="store_true", help="Delete matched items (FIND MODE ONLY)")
     parser.add_argument("--noemoji", dest="no_emoji", action="store_true", help="Disable emojis for legacy terminals")
 
+    # NEW: Include filter
+    parser.add_argument("--include", nargs="+", default=[], help="Only include files/directories matching patterns")
+
+    # NEW: File type filter
+    parser.add_argument("-t", "--type", type=str, default=None,
+                        help="Filter by file type (py/js/ts/cpp/go/java/rs/web/json/yaml/md/shell/all)")
+
+    # NEW: Regex mode for search
+    parser.add_argument("--regex", action="store_true", help="Treat -f pattern as regular expression")
+
+    # NEW: Grep mode (content search)
+    grep_group = parser.add_argument_group("Grep Mode (Content Search)")
+    grep_group.add_argument("-g", "--grep", type=str, default=None, dest="grep_pattern",
+                            help="Search inside file contents")
+    grep_group.add_argument("-C", "--context", type=int, default=0,
+                            help="Show N lines of context around grep matches")
+
+    # NEW: Analyze mode
+    parser.add_argument("--analyze", action="store_true", help="Analyze project structure and dependencies")
+
     output_mode = parser.add_mutually_exclusive_group()
     output_mode.add_argument(
-        "--full", 
-        action="store_true", 
+        "--full",
+        action="store_true",
         help="POWER MODE: Gather full text content of scanned files."
     )
     output_mode.add_argument(
-        "--skeleton", 
-        action="store_true", 
+        "--skeleton",
+        action="store_true",
         help="[Experimental] AST Code Skeleton extraction (strips implementation logic)."
     )
     
@@ -45,8 +65,8 @@ def handle_scan(args):
         try:
             import PIL # type: ignore
         except ImportError:
-            print("\n❌ ERROR: 'Pillow' is required for image export.")
-            print("👉 Fix: pip install Pillow")
+            print("\nERROR: 'Pillow' is required for image export.")
+            print("Fix: pip install Pillow")
             sys.exit(1)
 
     # Process Empty Execution (Easter Eggs)
@@ -60,6 +80,18 @@ def handle_scan(args):
 
     if args.exclude:
         args.exclude = expand_excludes(args.exclude)
+
+    # NEW: Analyze mode routing
+    if args.analyze:
+        from .analyzer import run_analyze
+        run_analyze(args, target_path)
+        return
+
+    # NEW: Grep mode routing
+    if args.grep_pattern:
+        from .grep import run_grep
+        run_grep(args, target_path)
+        return
 
     if args.skeleton:
         run_skeleton(args, target_path)

@@ -19,8 +19,11 @@ def run_search(args, target_path: Path):
     config = ScanConfig(
         show_hidden=args.show_hidden,
         excludes=args.exclude,
+        includes=getattr(args, 'include', []),
+        file_type=getattr(args, 'type', None),
         text_only=args.text_only,
-        quiet=args.quiet
+        quiet=args.quiet,
+        use_regex=getattr(args, 'regex', False)
     )
 
     # 执行核心搜索引擎

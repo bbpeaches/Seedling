@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-03-21
+
+### Agent Tools Enhancement Update
+
+This release transforms Seedling into a powerful alternative to built-in tools like Glob, Grep, and Explore agents, making it the go-to choice for AI-assisted development workflows.
+
+### New Features
+
+- **JSON Output Mode (`-F json`)**: Export directory structures as structured JSON for programmatic consumption by AI agents and automation tools. Includes `meta`, `stats`, and nested `tree` with file extensions.
+- **File Type Filter (`--type` / `-t`)**: Filter scans by file type with support for `py`, `js`, `ts`, `cpp`, `go`, `java`, `rs`, `web`, `json`, `yaml`, `md`, `shell`, and `all`.
+- **Include Filter (`--include`)**: Specify glob patterns to include only matching files (e.g., `--include "*.py"`).
+- **Regex Search Mode (`--regex`)**: Treat search patterns as regular expressions instead of simple substrings.
+- **Content Search / Grep Mode (`--grep` / `-g`)**: Search inside file contents with optional context lines (`-C N`).
+- **Project Analysis Mode (`--analyze`)**: Intelligently analyze project structure, detect project type, language, entry points, dependencies, and architecture patterns.
+
+### Architecture Changes
+
+- **Extended `ScanConfig`**: Added `includes`, `file_type`, and `use_regex` fields to the configuration dataclass.
+- **New `FILE_TYPE_MAP`**: Centralized file type to extension mapping for consistent filtering.
+- **New `matches_include_pattern()`**: Pattern matching function for include filters.
+- **New Modules**:
+  - `json_output.py`: JSON serialization for directory trees
+  - `grep.py`: Content search engine with context support
+  - `analyzer.py`: Project analysis and detection
+
+### CLI Improvements
+
+- **Format option extended**: `-F` now accepts `json` in addition to `md`, `txt`, `image`
+- **New argument group**: Grep Mode arguments (`-g`, `-C`) grouped in help output
+- **Smart routing**: `handle_scan()` now routes to specialized handlers for `--analyze` and `--grep` modes
+
+### Usage Examples
+
+```bash
+# JSON output for AI consumption
+scan . -F json -o structure.json
+
+# Filter by file type
+scan . --type py -d 3
+
+# Regex search
+scan . -f "test_.*\.py" --regex
+
+# Content search with context
+scan . --grep "TODO" -C 3 --type py
+
+# Project analysis
+scan . --analyze
+
+# Combined filters
+scan . --type py --grep "def main" -C 2
+```
+
 ## [2.3.1] - 2026-03-19
 
 ### 🚀 Architectural Overhaul & API (The "Precision & Architecture" Update)

@@ -1,4 +1,4 @@
-# 🌲 Seedling (v2.3.1)
+# Seedling (v2.4.0)
 
 [![Seedling CI](https://img.shields.io/github/actions/workflow/status/bbpeaches/Seedling/ci.yml?branch=main&style=flat-square)](https://github.com/bbpeaches/Seedling/actions)
 [![PyPI version](https://img.shields.io/pypi/v/seedling-tools.svg?style=flat-square&color=blue)](https://pypi.org/project/Seedling-tools/)
@@ -7,11 +7,11 @@
 
 **Seedling** 是一款专为开发者设计的高性能、三合一 CLI（命令行）工具箱，用于探索、搜索和重构目录结构。无论您是需要一张精美的项目架构图，想通过文本蓝图快速生成项目，还是需要为大语言模型（LLM）提取极度优化后的代码库骨架，Seedling 都能为您轻松搞定。
 
-其他语言版本阅读: [🇬🇧 English](../README.md)
+其他语言版本阅读: [English](../README.md)
 
 ---
 
-## 🛠️ 安装指南
+## 安装指南
 
 Seedling 推荐通过 `pipx` 进行全局安装，以确保干净的隔离环境。
 ```bash
@@ -33,7 +33,7 @@ pipx install -e . --force
 
 -----
 
-## 🐍 作为 Python 库使用
+## 作为 Python 库使用
 
 您现在可以通过 `ScanConfig` 引擎直接在 Python 代码中使用 Seedling 的核心功能：
 
@@ -58,11 +58,11 @@ seedling.build_structure_from_file("blueprint.md", "./new_project")
 
 -----
 
-## 📖 CLI 命令参考
+## CLI 命令参考
 
-Seedling 2.3.1 采用清晰、显式的参数系统。
+Seedling 2.4.0 采用清晰、显式的参数系统。
 
-### 1\. `scan` - 探索器
+### 1. `scan` - 探索器
 
 用于扫描目录、提取代码骨架或搜索项目。注意：`--full` 和 `--skeleton` 为互斥参数。
 
@@ -70,19 +70,25 @@ Seedling 2.3.1 采用清晰、显式的参数系统。
 | --- | --- |
 | `target` | 要扫描或搜索的目标目录 (默认为 `.`)。 |
 | `--find`, `-f` | **搜索模式**。快速 CLI 搜索 (精确匹配 & 模糊匹配)。结合 `--full` 可导出代码报告。 |
-| `--format`, `-F` | 输出格式：`md` (默认), `txt`, 或 `image`。 |
+| `--format`, `-F` | 输出格式：`md` (默认), `txt`, `json`, 或 `image`。 |
 | `--name`, `-n` | 自定义输出文件名。 |
 | `--outdir`, `-o` | 结果保存路径。 |
 | `--showhidden` | 扫描时包含隐藏文件。 |
 | `--depth`, `-d` | 最大递归深度。 |
 | `--exclude`, `-e` | 排除项目列表。**智能解析：自动读取 `.gitignore` 文件或接受 Glob 模式**。 |
+| `--include` | **[新增]** 仅包含匹配模式的文件/目录 (如 `--include "*.py"`)。 |
+| `--type`, `-t` | **[新增]** 按文件类型过滤：`py`, `js`, `ts`, `cpp`, `go`, `java`, `rs`, `web`, `json`, `yaml`, `md`, `shell`, `all`。 |
+| `--regex` | **[新增]** 将 `-f` 搜索模式视为正则表达式。 |
+| `--grep`, `-g` | **[新增]** 在文件内容中搜索 (内容搜索模式)。 |
+| `-C`, `--context` | **[新增]** 在 grep 匹配周围显示 N 行上下文。 |
+| `--analyze` | **[新增]** 分析项目结构、类型、依赖和架构。 |
 | `--full` | **强力模式 (Power Mode)**。附加所有扫描到的源文件的全文内容。 |
 | `--skeleton` | **[实验性]** AST 代码骨架提取。剔除内部逻辑，保留签名。 |
 | `--text` | **智能过滤**。仅扫描文本格式文件 (自动忽略二进制/多媒体文件)。 |
 | `--delete` | **清理模式**。永久删除被 `--find` 匹配到的项目 (仅限交互式 TTY 终端可用)。 |
 | `--verbose` / `-q`| 调试日志模式 (`-v`) 或静默模式 (`-q`)。 |
 
-### 2\. `build` - 建造师
+### 2. `build` - 建造师
 
 将基于文本的树状图蓝图转换为真实的文件系统，或从快照中恢复项目。
 
@@ -96,7 +102,43 @@ Seedling 2.3.1 采用清晰、显式的参数系统。
 
 -----
 
-## 📂 项目结构 (v2.3.1)
+## v2.4.0 新功能 - Agent 工具增强
+
+### JSON 输出模式
+导出结构化 JSON 格式的目录结构，便于程序化处理：
+```bash
+scan . -F json -o structure.json
+```
+
+### 文件类型与 Include 过滤器
+按文件类型或自定义模式过滤：
+```bash
+scan . --type py -d 3
+scan . --include "*.md" --include "*.txt"
+```
+
+### 正则搜索模式
+在搜索中使用正则表达式：
+```bash
+scan . -f "test_.*\.py" --regex
+```
+
+### 内容搜索 (Grep 模式)
+在文件内容中搜索并显示上下文：
+```bash
+scan . --grep "TODO" -C 3 --type py
+scan . -g "def main" -C 2
+```
+
+### 项目分析
+分析项目结构和依赖：
+```bash
+scan . --analyze
+```
+
+-----
+
+## 项目结构 (v2.4.0)
 
 ```text
 Seedling/
@@ -104,10 +146,16 @@ Seedling/
 │   ├── CHANGELOG.md           # 英文更新日志
 │   ├── CHANGELOG_zh.md        # 中文更新日志
 │   └── README_zh.md           # 中文说明文档
-├── seedling/                  # 核心包 
+├── seedling/                  # 核心包
 │   ├── commands/              # CLI 命令路由
 │   │   ├── build/             # 构建逻辑
 │   │   └── scan/              # 扫描逻辑
+│   │       ├── __init__.py    # 命令路由
+│   │       ├── analyzer.py    # [新增] 项目分析
+│   │       ├── explorer.py    # 目录扫描
+│   │       ├── grep.py        # [新增] 内容搜索
+│   │       ├── json_output.py # [新增] JSON 输出
+│   │       └── search.py      # 文件搜索
 │   ├── core/                  # 共享引擎
 │   │   ├── filesystem.py      # 迭代 DFS，ScanConfig 与过滤机制
 │   │   ├── io.py              # 文件读写，代码块边界碰撞与路径安全
@@ -116,7 +164,7 @@ Seedling/
 │   │   └── ui.py              # 动画与 CI/CD 环境检查
 │   ├── __init__.py            # 公开 API 与元数据
 │   └── main.py                # CLI 入口路由
-├── tests/                     # 单元测试 (核心、边缘场景与 IO)
+├── tests/                     # 单元测试 (核心、边缘场景、IO 与 v2.4 新功能)
 ├── install.bat                # Windows 一键安装脚本
 ├── install.sh                 # Linux/macOS 一键安装脚本
 ├── LICENSE                    # MIT 开源许可证
@@ -128,6 +176,6 @@ Seedling/
 
 -----
 
-## 📜 变更日志
+## 变更日志
 
 每一次发布的详细变更历史均记录于 [CHANGELOG.md](CHANGELOG.md) 文件中。
