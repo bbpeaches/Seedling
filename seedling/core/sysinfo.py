@@ -2,6 +2,7 @@ import platform
 import sys
 
 def get_system_mem_limit_mb():
+    """获取系统信息"""
     fallback_mb = 512
     try:
         system = platform.system()
@@ -47,4 +48,5 @@ def get_system_mem_limit_mb():
     return fallback_mb
 
 def get_system_depth_limit():
+    """深度上限"""
     return max(100, sys.getrecursionlimit() - 100)

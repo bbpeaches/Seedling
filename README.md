@@ -1,11 +1,21 @@
-# Seedling (v2.4.1)
+# Seedling-tools
 
 [![Seedling CI](https://img.shields.io/github/actions/workflow/status/bbpeaches/Seedling/ci.yml?branch=main&style=flat-square)](https://github.com/bbpeaches/Seedling/actions)
 [![PyPI version](https://img.shields.io/pypi/v/seedling-tools.svg?style=flat-square&color=blue)](https://pypi.org/project/Seedling-tools/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/seedling-tools.svg?style=flat-square)](https://pypi.org/project/Seedling-tools/)
 [![License](https://img.shields.io/github/license/bbpeaches/Seedling?style=flat-square)](https://github.com/bbpeaches/Seedling/blob/main/LICENSE)
 
-**Seedling** is a high-performance, 3-in-1 CLI toolkit designed for developers to explore, search, and reconstruct directory structures. Whether you need a beautiful image of your project architecture, a way to spawn a project from a text blueprint, or a context-optimized codebase skeleton for LLMs, Seedling has you covered.
+**Seedling-tools** is a high-performance CLI toolkit designed for codebase exploration, intelligent analysis, and LLM context aggregation.
+
+Core Capabilities:
+1. SCAN: Export directory trees to Markdown, TXT, JSON, or Images.
+2. FIND & GREP: Perform exact/fuzzy file searches and regex-based content matching.
+3. ANALYZE: Auto-detect project architecture, dependencies, and entry points.
+4. SKELETON: Extract Python AST structures (stripping implementation logic).
+5. POWER MODE: Aggregate full repository source code for LLM prompts.
+6. BUILD: Reconstruct physical file systems from text-based blueprints.
+
+Powered by a unified, single-pass caching traversal engine.
 
 Read this document in other languages: [简体中文](https://github.com/bbpeaches/Seedling/blob/main/docs/README_zh.md)
 
@@ -13,7 +23,7 @@ Read this document in other languages: [简体中文](https://github.com/bbpeach
 
 ## Installation
 
-Seedling is designed to be installed globally via `pipx` for a clean, isolated environment.
+Seedling-tools is designed to be installed globally via `pipx` for a clean, isolated environment.
 ```
 pipx install Seedling-tools
 ```
@@ -60,7 +70,7 @@ seedling.build_structure_from_file("blueprint.md", "./new_project")
 
 ## CLI Reference
 
-Seedling 2.4.1 uses a clean, explicit argument system.
+Seedling-tools uses a clean, explicit argument system.
 
 ### 1. `scan` - The Explorer
 
@@ -103,7 +113,7 @@ Turn a text-based tree into a real file system, or restore a project from a snap
 
 ---
 
-## New in v2.4.1 - Bug Fixes & Improvements
+## New in v2.4 - Bug Fixes & Improvements
 
 ### Security
 - **`--dry-run` Mode**: Preview deletions before executing with `--delete`:
@@ -153,7 +163,7 @@ scan . --analyze
 
 ---
 
-## Project Structure (v2.4.1)
+## Project Structure (v2.4)
 
 ```text
 Seedling/
@@ -163,23 +173,31 @@ Seedling/
 │   └── README_zh.md           # Chinese documentation
 ├── seedling/                  # Core Package
 │   ├── commands/              # CLI Command Routers
-│   │   ├── build/             # Build logic
-│   │   └── scan/              # Scan logic
-│   │       ├── __init__.py    # Command routing
-│   │       ├── analyzer.py    # [NEW] Project analysis
-│   │       ├── explorer.py    # Directory scanning
-│   │       ├── grep.py        # [NEW] Content search
-│   │       ├── json_output.py # [NEW] JSON output
-│   │       └── search.py      # File search
-│   ├── core/                  # Shared Engines
-│   │   ├── filesystem.py      # Iterative DFS, ScanConfig & Filtering
-│   │   ├── io.py              # File R/W, Fence Collision & Path Safety
-│   │   ├── logger.py          # Centralized CLI Formatter
-│   │   ├── sysinfo.py         # Hardware Probe
-│   │   └── ui.py              # Animations & CI/CD checks
-│   ├── __init__.py            # Public API & Metadata
+│   │   ├── build/             # Build logic (Reverse engineering)
+│   │   │   ├── __init__.py    # Build CLI router & validation
+│   │   │   └── architect.py   # Blueprint parsing & safe construction
+│   │   └── scan/              # Scan logic (Exploration & Extraction)
+│   │       ├── __init__.py    # Central Router & Single-pass trigger
+│   │       ├── analyzer.py    # Project architecture & dependency analysis
+│   │       ├── exclude.py     # .gitignore-style exclusion rule parser
+│   │       ├── explorer.py    # Tree rendering & generic format export
+│   │       ├── full.py        # Power Mode (LLM context aggregation)
+│   │       ├── grep.py        # In-memory content search & context extraction
+│   │       ├── json_output.py # Nested JSON structured export
+│   │       ├── search.py      # File search (Exact/Fuzzy) & safe deletion
+│   │       └── skeleton.py    # Python AST extraction (Implementation stripping)
+│   ├── core/                  # Shared Core Engines
+│   │   ├── config.py          # Configuration dataclasses & global constants
+│   │   ├── detection.py       # File type & binary content probe
+│   │   ├── io.py              # File R/W, Fence collision & Overwrite protection
+│   │   ├── logger.py          # Centralized CLI formatter & log levels
+│   │   ├── patterns.py        # Glob/Regex path matching engine
+│   │   ├── sysinfo.py         # Hardware RAM probe & depth limits
+│   │   ├── traversal.py       # Unified single-pass caching engine
+│   │   └── ui.py              # Interactive prompts & progress bars
+│   ├── __init__.py            # Public API & Metadata exposure
 │   └── main.py                # CLI Entry Point Router
-├── tests/                     # Unit Tests (Core, Edge Cases, IO & v2.4 features)
+├── tests/                     # Unit Tests (Core, Edge Cases, IO)
 ├── install.bat                # Windows one-click installer
 ├── install.sh                 # Linux/macOS one-click installer
 ├── LICENSE                    # MIT License

@@ -19,7 +19,7 @@ def _read_ignore_rules(file_path: Path, rules_list: list):
         logger.error(f"Failed to read {file_path}: {e}")
 
 def expand_excludes(raw_excludes: list) -> list:
-    """智能解析 exclude 参数"""
+    """解析 exclude 参数"""
     expanded_excludes = []
     current_work_dir = Path.cwd()
     

@@ -6,12 +6,14 @@ from seedling.core.io import extract_tree_block, extract_file_contents, is_safe_
 from seedling.core.logger import logger
 
 def calculate_depth(prefix):
-    """基于前缀字符计算实际嵌套深度"""
+    """计算当前节点的实际嵌套层级深度"""
     if not prefix: return 0
+    # 将各类树状连接符替换为空格，以统一计算视觉缩进宽度
     clean_prefix = prefix.replace('│', ' ').replace('├', ' ').replace('└', ' ').replace('─', ' ')
-    return len(clean_prefix) // 4
+    return len(clean_prefix) // 4  # 默认按照 4 个字符宽度划分一个树状层级
 
 def build_structure_from_file(source_file, target_dir, check_mode=False, force_mode=False):
+    """解析纯文本蓝图与代码块"""
     tree_lines = extract_tree_block(source_file)
     file_contents = extract_file_contents(source_file)
 
@@ -21,21 +23,20 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
 
     target_path = Path(target_dir).resolve()
     
-    # ==========================================
     # Safe Parsing Phase
-    # ==========================================
     raw_parsed_items = []
     for line in tree_lines:
+        # 剥离树状图的连接前缀与节点实际内容
         match = re.match(r'^([│├└─\s]*)(.+)$', line)
         if not match: continue
             
         prefix, content = match.groups()
         depth = calculate_depth(prefix)
-        
         clean_name = content.split('<-')[0].strip()
         clean_name = re.split(r'\s{2,}#', clean_name)[0].strip()
         clean_name = re.split(r'\s{2,}', clean_name)[0].strip() 
         
+        # 目录识别
         is_dir = clean_name.endswith('/')
         if is_dir: clean_name = clean_name.rstrip('/')
             
@@ -47,17 +48,21 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
             if raw_parsed_items[i+1]['depth'] > item['depth']:
                 item['is_dir'] = True
 
+    # 根节点清理
     if raw_parsed_items and raw_parsed_items[0]['depth'] == 0:
         if not any(item['depth'] == 0 for item in raw_parsed_items[1:]):
             raw_parsed_items.pop(0)
 
     parsed_items = []
     stack = [(-1, target_path)]
+    
     for item in raw_parsed_items:
         while stack and stack[-1][0] >= item['depth']: 
             stack.pop()
         
         current_path = (stack[-1][1] / item['name']).resolve()
+        
+        # 安全防御
         if not is_safe_path(current_path, target_path):
             logger.warning(f"🚫 Blocked (Security): {item['name']} (Attempted path traversal)")
             continue
@@ -76,17 +81,17 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
             continue
         safe_file_contents[rel_path] = (p, content)
 
-    # ==========================================
     # Dry Run
-    # ==========================================
     if check_mode:
         logger.info(f"\n🔍 [CHECK MODE] Simulating build in: {target_path}")
         missing, existing = set(), set()
         
+        # 检查结构声明节点
         for item in parsed_items:
             if item['safe_path'].exists(): existing.add(item['safe_path'])
             else: missing.add(item['safe_path'])
             
+        # 检查代码块声明节点
         for rel_path, (p, content) in safe_file_contents.items():
             if p.exists(): existing.add(p)
             else: missing.add(p)
@@ -102,16 +107,14 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
             logger.info("✅ Everything is already perfectly built!")
             return True
 
-    # ==========================================
     # Build Phase
-    # ==========================================
     logger.info(f"\n🏗️  Building structure in: {target_path} ...\n")
     if safe_file_contents:
         logger.info(f"📦 Discovered source code for {len(safe_file_contents)} files! Restoring magic...\n")
 
     dirs_created, files_created, skipped = 0, 0, 0
     populated_count = 0
-    handled_files = set()
+    handled_files = set() 
     
     for item in parsed_items:
         current_path = item['safe_path']

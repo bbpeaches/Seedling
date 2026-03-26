@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2026-03-26
+
+*Note: This is a maintenance release focused entirely on internal refactoring and stability. No new features have been added.*
+
+### Changed
+- Optimizes internal code architecture for better performance and maintainability.
+- Adds comprehensive comments to core logic for improved readability.
+
+### Fixed
+- Fixes several known issues.
+
 ## [2.4.1] - 2026-03-21
 
 ### Architecture Refactoring

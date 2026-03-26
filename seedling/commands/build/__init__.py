@@ -6,6 +6,7 @@ from seedling.core.logger import logger
 from .architect import build_structure_from_file
 
 def setup_build_parser(parser):
+    """配置CLI参数"""
     parser.add_argument("--version", action="version", version=f"Seedling v{__version__}")
     parser.add_argument("file", nargs="?", help="The source tree file (.txt or .md)")
     parser.add_argument("target", nargs="?", default=None, help="Where to build the structure (default: current dir)")
@@ -18,6 +19,7 @@ def setup_build_parser(parser):
     group.add_argument("--force", action="store_true", help="Force overwrite existing files")
 
 def handle_build(args):
+    """核心调度逻辑"""
     from seedling.core.logger import configure_logging
     configure_logging(getattr(args, 'verbose', False), getattr(args, 'quiet', False))
 
@@ -27,10 +29,12 @@ def handle_build(args):
 
     source_file = Path(args.file).resolve()
     
+    # 拦截校验
     if source_file.is_dir():
         logger.error(f"'{args.file}' is a DIRECTORY. The 'build' command requires a text/markdown FILE blueprint.")
         sys.exit(1)
         
+    # 直接创建模式
     if args.direct:
         if not source_file.suffix:
             source_file.mkdir(parents=True, exist_ok=True)
@@ -44,6 +48,7 @@ def handle_build(args):
     target_provided = args.target is not None
     target_dir = Path(args.target).resolve() if target_provided else Path(".").resolve()
     
+    # 意图推测拦截
     if not source_file.exists():
         logger.error(f"Blueprint file '{args.file}' does not exist.")
         if target_provided:
@@ -60,5 +65,5 @@ def handle_build(args):
             sys.exit(0)
         else:
             sys.exit(1)
-            
+
     build_structure_from_file(source_file, target_dir, check_mode=args.check, force_mode=args.force)

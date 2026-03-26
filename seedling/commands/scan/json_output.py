@@ -1,52 +1,58 @@
-"""JSON output module for programmatic consumption."""
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from seedling.core.filesystem import ScanConfig, is_valid_item
+from typing import Dict, Any
+from seedling.core.config import ScanConfig
+from seedling.core.traversal import TraversalResult
 
+def build_json_structure(dir_path: Path, config: ScanConfig, result: TraversalResult) -> Dict[str, Any]:
+    """构建嵌套的 JSON 目录树"""
+    items_by_parent = {}
+    for item in result.items:
+        items_by_parent.setdefault(item.path.parent, []).append(item)
 
-def build_json_structure(dir_path: Path, config: ScanConfig, stats: Dict[str, int]) -> Dict[str, Any]:
-    """Build nested JSON structure representing the directory tree."""
-    result = {
-        "meta": {
-            "root": dir_path.name,
-            "path": str(dir_path.resolve()),
-        },
-        "stats": {
-            "directories": stats.get("dirs", 0),
-            "files": stats.get("files", 0)
-        },
-        "tree": _build_node(dir_path, dir_path, config)
+    def _build_node(current_path: Path, is_dir: bool) -> Dict[str, Any]:
+        """递归拼接单个文件或目录"""
+        
+        node: Dict[str, Any] = {
+            "name": current_path.name,
+            "type": "directory" if is_dir else "file",
+            "path": str(current_path.relative_to(dir_path)) if current_path != dir_path else "."
+        }
+        
+        if not is_dir:
+            node["extension"] = current_path.suffix.lower() or None
+        else:
+            children = []
+            if current_path in items_by_parent:
+                # 目录优先，同级按名称字母顺序排列
+                sorted_children = sorted(items_by_parent[current_path], key=lambda x: (not x.is_dir, x.path.name.lower()))
+                for child_item in sorted_children:
+                    children.append(_build_node(child_item.path, child_item.is_dir))
+            node["children"] = children
+            
+        return node
+
+    return {
+        "meta": {"root": dir_path.name, "path": str(dir_path.resolve())},
+        "stats": {"directories": result.stats["dirs"], "files": result.stats["files"]},
+        "tree": _build_node(dir_path, True)
     }
-    return result
 
-
-def _build_node(current: Path, base: Path, config: ScanConfig) -> Dict[str, Any]:
-    """Recursively build JSON node for a path."""
-    node = {
-        "name": current.name,
-        "type": "directory" if current.is_dir() else "file",
-        "path": str(current.relative_to(base))
-    }
-
-    if current.is_file():
-        node["extension"] = current.suffix.lower() or None # type: ignore
-    elif current.is_dir():
-        children = []
-        try:
-            items = sorted(current.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
-            for item in items:
-                if is_valid_item(item, base, config):
-                    children.append(_build_node(item, base, config))
-        except PermissionError:
-            node["error"] = "Permission Denied"
-        node["children"] = children # type: ignore
-
-    return node
-
+def build_json_with_contents(dir_path: Path, config: ScanConfig, result: TraversalResult) -> Dict[str, Any]:
+    """源文件内容"""
+    json_data = build_json_structure(dir_path, config, result)
+    contents = {}
+    
+    for item in result.text_files:
+        c = result.get_content(item, quiet=True)
+        if c:
+            contents[str(item.relative_path)] = c
+            
+    json_data["contents"] = contents
+    return json_data
 
 def write_json(data: Dict[str, Any], output_file: Path) -> bool:
-    """Write JSON data to file."""
+    """格式化JSON文件"""
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -55,11 +61,3 @@ def write_json(data: Dict[str, Any], output_file: Path) -> bool:
         from seedling.core.logger import logger
         logger.error(f"Failed to write JSON: {e}")
         return False
-
-
-def build_json_with_contents(dir_path: Path, config: ScanConfig, stats: Dict[str, int],
-                              contents: Dict[str, str]) -> Dict[str, Any]:
-    """Build JSON structure with file contents included."""
-    result = build_json_structure(dir_path, config, stats)
-    result["contents"] = contents
-    return result
