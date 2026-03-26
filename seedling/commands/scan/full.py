@@ -1,21 +1,27 @@
-from seedling.core.filesystem import get_full_context, ScanConfig
+from seedling.core.config import ScanConfig
+from seedling.core.traversal import TraversalResult
 from seedling.core.io import get_dynamic_fence
 from seedling.core.logger import logger
 
-def run_full(args, target_path, config: ScanConfig):
+def run_full(args, target_path, config: ScanConfig, result: TraversalResult):
+    """遍历缓存并提取所有纯文本"""
     logger.info(f"\n🚀 Power Mode Enabled! Gathering file contents...")
+    
     if args.format == 'image':
         logger.warning("Power Mode cannot be exported as an image. Defaulting to Markdown (.md).")
 
-    context_list = get_full_context(target_path, config)
+    sections = ["\n\n" + "="*60, "📁 FULL PROJECT CONTENT", "="*60 + "\n"] 
+    extracted_count = 0
     
-    sections = ["\n\n" + "="*60, "📁 FULL PROJECT CONTENT", "="*60 + "\n"]
-    for rel_path, content in context_list:
-        sections.append(f"### FILE: {rel_path}")
-        lang = rel_path.suffix.lstrip('.')
-        
-        fence = get_dynamic_fence(content)
-        sections.append(f"{fence}{lang}\n{content}\n{fence}\n")
-        
-    logger.info(f"✅ Aggregated {len(context_list)} files.")
+    for item in result.text_files:
+        content = result.get_content(item, quiet=config.quiet)
+        if content:
+            sections.append(f"### FILE: {item.relative_path}")
+            lang = item.path.suffix.lstrip('.')
+            
+            fence = get_dynamic_fence(content)
+            sections.append(f"{fence}{lang}\n{content}\n{fence}\n")
+            extracted_count += 1
+            
+    logger.info(f"✅ Aggregated {extracted_count} files.")
     return "\n".join(sections)

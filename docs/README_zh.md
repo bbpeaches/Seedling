@@ -1,11 +1,21 @@
-# Seedling (v2.4.1)
+# Seedling-tools
 
 [![Seedling CI](https://img.shields.io/github/actions/workflow/status/bbpeaches/Seedling/ci.yml?branch=main&style=flat-square)](https://github.com/bbpeaches/Seedling/actions)
 [![PyPI version](https://img.shields.io/pypi/v/seedling-tools.svg?style=flat-square&color=blue)](https://pypi.org/project/Seedling-tools/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/seedling-tools.svg?style=flat-square)](https://pypi.org/project/Seedling-tools/)
 [![License](https://img.shields.io/github/license/bbpeaches/Seedling?style=flat-square)](https://github.com/bbpeaches/Seedling/blob/main/LICENSE)
 
-**Seedling** 是一款专为开发者设计的高性能、三合一 CLI（命令行）工具箱，用于探索、搜索和重构目录结构。无论您是需要一张精美的项目架构图，想通过文本蓝图快速生成项目，还是需要为大语言模型（LLM）提取极度优化后的代码库骨架，Seedling 都能为您轻松搞定。
+**Seedling-tools** 是一款高性能的命令行工具包，专为代码库探索、智能分析以及大模型上下文聚合而设计。
+
+核心功能：
+1. **SCAN**：将目录树结构导出为 Markdown、TXT、JSON 或图片格式。
+2. **FIND & GREP**：执行精确/模糊的文件名搜索，以及基于正则表达式的文件内容匹配。
+3. **ANALYZE**：自动探测项目架构、核心依赖包及程序入口点。
+4. **SKELETON**：基于 AST 提取 Python 代码结构，并自动剥离具体的实现逻辑。
+5. **POWER MODE**：全量聚合整个代码仓库的源码，为 LLM 提示词投喂提供完整的上下文。
+6. **BUILD**：根据纯文本蓝图逆向还原出真实的物理文件系统。
+
+由统一单次遍历缓存引擎强力驱动。
 
 其他语言版本阅读: [English](../README.md)
 
@@ -13,7 +23,7 @@
 
 ## 安装指南
 
-Seedling 推荐通过 `pipx` 进行全局安装，以确保干净的隔离环境。
+Seedling-tools 推荐通过 `pipx` 进行全局安装，以确保干净的隔离环境。
 ```bash
 pipx install Seedling-tools
 ```
@@ -60,7 +70,7 @@ seedling.build_structure_from_file("blueprint.md", "./new_project")
 
 ## CLI 命令参考
 
-Seedling 2.4.1 采用清晰、显式的参数系统。
+Seedling-tools 采用清晰、显式的参数系统。
 
 ### 1. `scan` - 探索器
 
@@ -76,17 +86,17 @@ Seedling 2.4.1 采用清晰、显式的参数系统。
 | `--showhidden` | 扫描时包含隐藏文件。 |
 | `--depth`, `-d` | 最大递归深度。 |
 | `--exclude`, `-e` | 排除项目列表。**智能解析：自动读取 `.gitignore` 文件或接受 Glob 模式**。 |
-| `--include` | **[新增]** 仅包含匹配模式的文件/目录 (如 `--include "*.py"`)。 |
-| `--type`, `-t` | **[新增]** 按文件类型过滤：`py`, `js`, `ts`, `cpp`, `go`, `java`, `rs`, `web`, `json`, `yaml`, `md`, `shell`, `all`。 |
-| `--regex` | **[新增]** 将 `-f` 搜索模式视为正则表达式。 |
-| `--grep`, `-g` | **[新增]** 在文件内容中搜索 (内容搜索模式)。 |
-| `-C`, `--context` | **[新增]** 在 grep 匹配周围显示 N 行上下文。 |
-| `--analyze` | **[新增]** 分析项目结构、类型、依赖和架构。 |
+| `--include` | 仅包含匹配模式的文件/目录 (如 `--include "*.py"`)。 |
+| `--type`, `-t` | 按文件类型过滤：`py`, `js`, `ts`, `cpp`, `go`, `java`, `rs`, `web`, `json`, `yaml`, `md`, `shell`, `all`。 |
+| `--regex` | 将 `-f` 搜索模式视为正则表达式。 |
+| `--grep`, `-g` | 在文件内容中搜索 (内容搜索模式)。 |
+| `-C`, `--context` | 在 grep 匹配周围显示 N 行上下文。 |
+| `--analyze` | 分析项目结构、类型、依赖和架构。 |
 | `--full` | **强力模式 (Power Mode)**。附加所有扫描到的源文件的全文内容。 |
 | `--skeleton` | **[实验性]** AST 代码骨架提取。剔除内部逻辑，保留签名。 |
 | `--text` | **智能过滤**。仅扫描文本格式文件 (自动忽略二进制/多媒体文件)。 |
 | `--delete` | **清理模式**。永久删除被 `--find` 匹配到的项目 (仅限交互式 TTY 终端可用)。 |
-| `--dry-run` | **[新增]** 预览删除操作但不实际执行 (配合 `--delete` 使用)。 |
+| `--dry-run` | 预览删除操作但不实际执行 (配合 `--delete` 使用)。 |
 | `--verbose` / `-q`| 调试日志模式 (`-v`) 或静默模式 (`-q`)。 |
 
 ### 2. `build` - 建造师
@@ -103,7 +113,7 @@ Seedling 2.4.1 采用清晰、显式的参数系统。
 
 -----
 
-## v2.4.1 新功能 - 修复与改进
+## v2.4 新功能 - 修复与改进
 
 ### 安全性
 - **`--dry-run` 模式**：在执行 `--delete` 前预览将要删除的内容：
@@ -153,7 +163,7 @@ scan . --analyze
 
 -----
 
-## 项目结构 (v2.4.1)
+## 项目结构 (v2.4)
 
 ```text
 Seedling/
@@ -163,30 +173,38 @@ Seedling/
 │   └── README_zh.md           # 中文说明文档
 ├── seedling/                  # 核心包
 │   ├── commands/              # CLI 命令路由
-│   │   ├── build/             # 构建逻辑
-│   │   └── scan/              # 扫描逻辑
-│   │       ├── __init__.py    # 命令路由
-│   │       ├── analyzer.py    # [新增] 项目分析
-│   │       ├── explorer.py    # 目录扫描
-│   │       ├── grep.py        # [新增] 内容搜索
-│   │       ├── json_output.py # [新增] JSON 输出
-│   │       └── search.py      # 文件搜索
-│   ├── core/                  # 共享引擎
-│   │   ├── filesystem.py      # 迭代 DFS，ScanConfig 与过滤机制
-│   │   ├── io.py              # 文件读写，代码块边界碰撞与路径安全
-│   │   ├── logger.py          # 集中式 CLI 格式化器
-│   │   ├── sysinfo.py         # 硬件探针
-│   │   └── ui.py              # 动画与 CI/CD 环境检查
-│   ├── __init__.py            # 公开 API 与元数据
+│   │   ├── build/             # 构建逻辑 (逆向工程)
+│   │   │   ├── __init__.py    # 构建 CLI 路由与参数校验
+│   │   │   └── architect.py   # 蓝图解析与安全物理构建
+│   │   └── scan/              # 扫描逻辑 (探索与提取)
+│   │       ├── __init__.py    # 中心路由与单次遍历触发器
+│   │       ├── analyzer.py    # 项目架构与依赖智能分析
+│   │       ├── exclude.py     # .gitignore 风格排除规则解析
+│   │       ├── explorer.py    # 目录树渲染与通用格式导出
+│   │       ├── full.py        # 强力模式 (大模型上下文全量聚合)
+│   │       ├── grep.py        # 纯内存内容搜索与上下文提取
+│   │       ├── json_output.py # 嵌套 JSON 结构化导出
+│   │       ├── search.py      # 文件搜索 (精确/模糊) 与安全删除
+│   │       └── skeleton.py    # Python AST 骨架提取 (逻辑剥离)
+│   ├── core/                  # 共享核心引擎
+│   │   ├── config.py          # 配置数据类与全局常量
+│   │   ├── detection.py       # 文件类型与二进制内容探针
+│   │   ├── io.py              # 文件读写、代码块边界碰撞与覆盖保护
+│   │   ├── logger.py          # 集中式 CLI 终端格式化与日志级别设定
+│   │   ├── patterns.py        # Glob/正则路径匹配引擎
+│   │   ├── sysinfo.py         # 硬件内存探针与系统深度限制获取
+│   │   ├── traversal.py       # 统一单次遍历缓存引擎
+│   │   └── ui.py              # 交互式提示与动态进度条
+│   ├── __init__.py            # 公开 API 暴露与包元数据
 │   └── main.py                # CLI 入口路由
-├── tests/                     # 单元测试 (核心、边缘场景、IO 与 v2.4 新功能)
+├── tests/                     # 单元测试 (核心机制、边缘场景、IO 安全等)
 ├── install.bat                # Windows 一键安装脚本
 ├── install.sh                 # Linux/macOS 一键安装脚本
 ├── LICENSE                    # MIT 开源许可证
 ├── pyproject.toml             # 构建配置与包元数据
 ├── pytest.ini                 # Pytest 测试配置文件
-├── README.md                  # 项目说明文档
-└── test_suite.sh              # 自动化测试
+├── README.md                  # 项目主说明文档
+└── test_suite.sh              # 自动化端到端 (E2E) 测试脚本
 ```
 
 -----

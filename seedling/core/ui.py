@@ -36,7 +36,7 @@ def setup_ui_theme(no_emoji: bool = False) -> None:
         })
 
 def ensure_utf8_output() -> None:
-    """Windows 编码防御，防止在非交互式终端下崩溃"""
+    """Windows 编码防御"""
     if sys.platform == "win32":
         for stream_name in ('stdout', 'stderr'):
             try:
@@ -50,7 +50,7 @@ def ensure_utf8_output() -> None:
                 pass
 
 def ask_yes_no(prompt_text: str, default_no: bool = True) -> bool:
-    """统一的交互式确认提示"""
+    """交互式确认提示"""
     if not sys.stdin.isatty():
         logger.warning("\n⚠️ Non-interactive terminal detected: defaulting to 'no' to prevent blocking.")
         return False if default_no else True
@@ -68,7 +68,7 @@ def ask_yes_no(prompt_text: str, default_no: bool = True) -> bool:
             return False
 
 def print_progress_bar(count: int, label: str = "Processing", icon: str = "⏳", quiet: bool = False) -> None:
-    """带静默模式的动态进度条"""
+    """动态进度条"""
     if quiet:
         return
     
@@ -77,9 +77,8 @@ def print_progress_bar(count: int, label: str = "Processing", icon: str = "⏳",
     sys.stdout.write(f"\r{icon} {label}... [{pulse[idx]}] Scanned: {count} items ")
     sys.stdout.flush()
 
-# --- 内部状态管理 ---
-
 def _get_state_file(tool_name: str) -> Path: 
+    """获取状态文件路径"""
     try:
         ppid = os.getppid()
     except AttributeError:
@@ -88,6 +87,7 @@ def _get_state_file(tool_name: str) -> Path:
     return temp_dir / f"seedling_session_{ppid}_{tool_name}.state"
 
 def _get_and_increment_run_count(tool_name: str) -> int: 
+    """获取并递增工具运行计数"""
     state_file = _get_state_file(tool_name)
     count = 0
     try:
@@ -103,6 +103,7 @@ def _get_and_increment_run_count(tool_name: str) -> int:
 # --- 欢迎与彩蛋 ---
 
 def print_welcome_message():
+    """欢迎信息"""
     welcome_text = """
     ==================================================================
       🌲 Seedling, A Directory Tree Scanner & Builder 🌲
@@ -119,6 +120,7 @@ def print_welcome_message():
     print(welcome_text)
 
 def handle_empty_run():
+    """彩蛋"""
     count = _get_and_increment_run_count("scan")
     if count == 1:
         print_welcome_message()
@@ -144,6 +146,7 @@ def handle_empty_run():
     sys.exit(0)
 
 def handle_empty_build_run():
+    """彩蛋"""
     count = _get_and_increment_run_count("build")
     if count == 1:
         print("\n🏗️  Welcome to Build mode! Give me a blueprint file (.md/.txt).")

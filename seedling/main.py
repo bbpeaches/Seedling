@@ -6,6 +6,7 @@ from seedling.commands.build import setup_build_parser, handle_build
 from seedling.core.ui import ensure_utf8_output
 
 def scan():
+    """scan路由入口"""
     ensure_utf8_output()
     parser = argparse.ArgumentParser(
         description=f"🌲 Seedling Scan (v{__version__}) - Directory Explorer",
@@ -21,6 +22,7 @@ def scan():
         sys.exit(0)
 
 def build():
+    """build路由入口"""
     parser = argparse.ArgumentParser(
         description=f"🏗️ Seedling Build (v{__version__}) - Project Structure Builder",
         formatter_class=argparse.RawTextHelpFormatter,
