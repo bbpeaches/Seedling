@@ -13,19 +13,30 @@ def build_json_structure(dir_path: Path, config: ScanConfig, result: TraversalRe
     def _build_node(current_path: Path, is_dir: bool) -> Dict[str, Any]:
         """递归拼接单个文件或目录"""
         
+        if current_path != dir_path:
+            rel_path = str(current_path.relative_to(dir_path))
+        else:
+            rel_path = "."
+
         node: Dict[str, Any] = {
             "name": current_path.name,
             "type": "directory" if is_dir else "file",
-            "path": str(current_path.relative_to(dir_path)) if current_path != dir_path else "."
+            "path": rel_path
         }
         
         if not is_dir:
-            node["extension"] = current_path.suffix.lower() or None
+            if current_path.suffix:
+                node["extension"] = current_path.suffix.lower()
+            else:
+                node["extension"] = None
         else:
             children = []
             if current_path in items_by_parent:
                 # 目录优先，同级按名称字母顺序排列
-                sorted_children = sorted(items_by_parent[current_path], key=lambda x: (not x.is_dir, x.path.name.lower()))
+                sorted_children = sorted(
+                    items_by_parent[current_path], 
+                    key=lambda x: (not x.is_dir, x.path.name.lower())
+                )
                 for child_item in sorted_children:
                     children.append(_build_node(child_item.path, child_item.is_dir))
             node["children"] = children
@@ -33,8 +44,14 @@ def build_json_structure(dir_path: Path, config: ScanConfig, result: TraversalRe
         return node
 
     return {
-        "meta": {"root": dir_path.name, "path": str(dir_path.resolve())},
-        "stats": {"directories": result.stats["dirs"], "files": result.stats["files"]},
+        "meta": {
+            "root": dir_path.name, 
+            "path": str(dir_path.resolve())
+        },
+        "stats": {
+            "directories": result.stats["dirs"], 
+            "files": result.stats["files"]
+        },
         "tree": _build_node(dir_path, True)
     }
 

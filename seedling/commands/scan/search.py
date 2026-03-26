@@ -24,10 +24,15 @@ def run_search(args, target_path: Path, config: ScanConfig, result: TraversalRes
             logger.error(f"Invalid regex pattern: {e}")
             return
 
-    keyword_lower = "" if config.use_regex else keyword.lower()
+    if config.use_regex:
+        keyword_lower = ""
+    else:
+        keyword_lower = keyword.lower()
 
     for item in result.items:
-        if item.is_dir: continue
+        if item.is_dir:
+            continue
+        
         name = item.path.name
 
         if config.use_regex and regex_pattern:
@@ -49,26 +54,36 @@ def run_search(args, target_path: Path, config: ScanConfig, result: TraversalRes
 
     all_matches = exact_matches + fuzzy_matches
 
-    if args.delete and not sys.stdin.isatty():
-        logger.error("Dangerous operation '--delete' can only be used in an interactive terminal.")
-        return
+    if args.delete:
+        if not sys.stdin.isatty():
+            logger.error("Dangerous operation '--delete' can only be used in an interactive terminal.")
+            return
 
     def format_item(item):
         """路径格式化工具"""
-        prefix = "[DIR] 📁" if item.is_dir() else "📄"
-        try: rel = item.relative_to(target_path)
-        except ValueError: rel = item
+        if item.is_dir():
+            prefix = "[DIR] 📁"
+        else:
+            prefix = "📄"
+            
+        try:
+            rel = item.relative_to(target_path)
+        except ValueError:
+            rel = item
+            
         return f"{prefix} {rel}"
 
     if exact_matches:
         logger.info(f"\n🎯 Exact matches for '{keyword}':")
-        for item in exact_matches[:20]: logger.info(f"  {format_item(item)}")
+        for item in exact_matches[:20]:
+            logger.info(f"  {format_item(item)}")
     else:
         logger.info(f"\n❓ No exact matches found for '{keyword}'.")
 
     if fuzzy_matches:
         logger.info(f"\n💡 Did you mean one of these? (Fuzzy matches):")
-        for item in fuzzy_matches[:10]: logger.info(f"  {format_item(item)}")
+        for item in fuzzy_matches[:10]:
+            logger.info(f"  {format_item(item)}")
 
     if not all_matches:
         logger.error("No matches found. Aborting.")
@@ -84,24 +99,42 @@ def run_search(args, target_path: Path, config: ScanConfig, result: TraversalRes
                 all_matches = exact_matches
                 
         if not all_matches:
-            logger.info("\nNo items left to delete. Aborting."); return
-
-        logger.warning(f"\n{'[DRY-RUN] ' if dry_run else ''}Items to be deleted ({len(all_matches)} total):")
-        for item in all_matches:
-            try: rel = item.relative_to(target_path)
-            except ValueError: rel = item
-            logger.info(f"  {'[DIR]' if item.is_dir() else '[FILE]'} {rel}")
+            logger.info("\nNo items left to delete. Aborting.")
+            return
 
         if dry_run:
-            logger.info(f"\n[DRY-RUN] Preview complete. No files were deleted."); return
+            msg_prefix = '[DRY-RUN] '
+        else:
+            msg_prefix = ''
+
+        logger.warning(f"\n{msg_prefix}Items to be deleted ({len(all_matches)} total):")
+        
+        for item in all_matches:
+            try:
+                rel = item.relative_to(target_path)
+            except ValueError:
+                rel = item
+            
+            if item.is_dir():
+                type_label = '[DIR]'
+            else:
+                type_label = '[FILE]'
+                
+            logger.info(f"  {type_label} {rel}")
+
+        if dry_run:
+            logger.info(f"\n[DRY-RUN] Preview complete. No files were deleted.")
+            return
 
         confirm = input(f"Please type 'CONFIRM DELETE' to proceed: ").strip()
         if confirm == "CONFIRM DELETE":
             deleted_count = 0
             for item in all_matches:
                 try:
-                    if item.is_symlink() or item.is_file(): item.unlink()
-                    else: shutil.rmtree(item)
+                    if item.is_symlink() or item.is_file():
+                        item.unlink()
+                    else:
+                        shutil.rmtree(item)
                     deleted_count += 1
                 except Exception as e:
                     logger.error(f" Failed to delete {item}: {e}")
@@ -113,8 +146,22 @@ def run_search(args, target_path: Path, config: ScanConfig, result: TraversalRes
         return
 
     logger.info("\n🚀 Power Mode triggered! Generating search report with full source code...")
-    out_dir = Path(args.outdir).resolve() if args.outdir else Path.cwd()
-    final_search_file = out_dir / (args.name or f"{target_path.name or 'root'}_search_{keyword}.md")
+    
+    if args.outdir:
+        out_dir = Path(args.outdir).resolve()
+    else:
+        out_dir = Path.cwd()
+        
+    if args.name:
+        search_filename = args.name
+    else:
+        if target_path.name:
+            root_label = target_path.name
+        else:
+            root_label = 'root'
+        search_filename = f"{root_label}_search_{keyword}.md"
+        
+    final_search_file = out_dir / search_filename
 
     if not check_overwrite_safely(final_search_file): 
         return
@@ -127,8 +174,13 @@ def run_search(args, target_path: Path, config: ScanConfig, result: TraversalRes
         with open(final_search_file, 'w', encoding='utf-8') as f:
             f.write(f"# Search Results for '{keyword}' in `{target_path}`\n\n")
             f.write("============================================================\n📁 MATCHED SOURCE FILES (SUMMARY)\n============================================================\n\n")
-            for m in exact_matches: f.write(f"- 🎯 [EXACT] {m.relative_to(target_path)}\n")
-            for m in fuzzy_matches: f.write(f"- 💡 [FUZZY] {m.relative_to(target_path)}\n")
+            
+            for m in exact_matches:
+                f.write(f"- 🎯 [EXACT] {m.relative_to(target_path)}\n")
+                
+            for m in fuzzy_matches:
+                f.write(f"- 💡 [FUZZY] {m.relative_to(target_path)}\n")
+                
             f.write(f"\n\n============================================================\n🌲 PROJECT TREE (WITH HIGHLIGHTS)\n============================================================\n\n```text\n{tree_text}\n```\n\n")
             f.write("============================================================\n📁 MATCHED SOURCE FILES (FULL CONTEXT)\n============================================================\n\n")
 

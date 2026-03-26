@@ -91,10 +91,12 @@ def _find_configs(result: TraversalResult, ptype: str) -> List[str]:
 def _find_entries(result: TraversalResult, lang: str) -> List[str]:
     """定位程序入口点"""
     patterns = ENTRY_PATTERNS.get(lang, [])
-    if not patterns: return []
+    if not patterns:
+        return []
     entries = []
     for item in result.text_files:
-        if len(entries) >= 10: break
+        if len(entries) >= 10:
+            break
         content = result.get_content(item, quiet=True)
         if content:
             for p in patterns:
@@ -107,7 +109,8 @@ def _extract_deps(result: TraversalResult, ptype: str) -> Dict[str, List[str]]:
     """特定项目解析浅层配置文件，提取核心依赖列表"""
     deps: Dict[str, List[str]] = {'direct': [], 'dev': []}
     for item in result.text_files:
-        if item.depth > 2: continue # 仅关注项目根部或浅层的依赖配置
+        if item.depth > 2: 
+            continue # 仅关注项目根部或浅层的依赖配置
         
         if ptype == 'node' and item.path.name == 'package.json':
             content = result.get_content(item, quiet=True)
@@ -117,7 +120,8 @@ def _extract_deps(result: TraversalResult, ptype: str) -> Dict[str, List[str]]:
                     data = json.loads(content)
                     deps['direct'] = list(data.get('dependencies', {}).keys())[:20]
                     deps['dev'] = list(data.get('devDependencies', {}).keys())[:10]
-                except Exception: pass
+                except Exception:
+                    pass
                 
         elif ptype == 'python' and item.path.name == 'requirements.txt':
             content = result.get_content(item, quiet=True)
@@ -131,24 +135,32 @@ def _extract_deps(result: TraversalResult, ptype: str) -> Dict[str, List[str]]:
                 in_deps = False
                 for line in content.split('\n'):
                     if line.strip() == '[dependencies]':
-                        in_deps = True; continue
+                        in_deps = True
+                        continue
                     if line.strip().startswith('['):
                         in_deps = False
                     if in_deps and '=' in line and not line.strip().startswith('#'):
                         dep_name = line.split('=')[0].strip()
-                        if dep_name: deps['direct'].append(dep_name)
+                        if dep_name:
+                            deps['direct'].append(dep_name)
     return deps
 
 def _detect_arch(result: TraversalResult) -> List[str]:
     """猜测项目可能采用的架构模式"""
     dirs = {item.path.name.lower() for item in result.directories if item.depth == 1}
     hints = []
-    if {'controllers', 'models', 'views'} & dirs: hints.append('MVC')
-    if {'services', 'repositories'} & dirs: hints.append('Layered')
-    if {'domain', 'usecases', 'infrastructure'} & dirs: hints.append('Clean')
-    if 'src' in dirs and ('tests' in dirs or 'test' in dirs): hints.append('SRC-TEST')
-    if '.github' in dirs or any(item.path.name == '.gitlab-ci.yml' for item in result.items if item.depth==1): hints.append('CI/CD')
-    if 'packages' in dirs or 'apps' in dirs: hints.append('Monorepo')
+    if {'controllers', 'models', 'views'} & dirs:
+        hints.append('MVC')
+    if {'services', 'repositories'} & dirs:
+        hints.append('Layered')
+    if {'domain', 'usecases', 'infrastructure'} & dirs:
+        hints.append('Clean')
+    if 'src' in dirs and ('tests' in dirs or 'test' in dirs):
+        hints.append('SRC-TEST')
+    if '.github' in dirs or any(item.path.name == '.gitlab-ci.yml' for item in result.items if item.depth==1):
+        hints.append('CI/CD')
+    if 'packages' in dirs or 'apps' in dirs:
+        hints.append('Monorepo')
     return hints
 
 def _collect_stats(result: TraversalResult) -> Dict[str, int]:
@@ -169,38 +181,47 @@ def run_analyze(args, target_path: Path, config: ScanConfig, result: TraversalRe
     logger.info(f"  Language: {analysis.language}")
     logger.info(f"  Architecture: {', '.join(analysis.architecture) or 'Not detected'}")
     logger.info(f"  Entry Points: {len(analysis.entry_points)}")
-    for ep in analysis.entry_points[:5]: logger.info(f"    - {ep}")
+    for ep in analysis.entry_points[:5]:
+        logger.info(f"    - {ep}")
     logger.info(f"  Config Files: {', '.join(analysis.config_files[:5]) or 'None found'}")
     logger.info(f"  Dependencies: {len(analysis.dependencies.get('direct', []))} direct, {len(analysis.dependencies.get('dev', []))} dev")
 
     top_exts = sorted(analysis.file_stats.items(), key=lambda x: x[1], reverse=True)[:5]
-    if top_exts: logger.info(f"  Top Extensions: {', '.join(f'{ext}({cnt})' for ext, cnt in top_exts)}")
+    if top_exts:
+        logger.info(f"  Top Extensions: {', '.join(f'{ext}({cnt})' for ext, cnt in top_exts)}")
 
     out_dir = Path(args.outdir).resolve() if args.outdir else Path.cwd()
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{target_path.name}_analysis.md"
     
-    if not check_overwrite_safely(out_file): return
+    if not check_overwrite_safely(out_file):
+        return
 
     with open(out_file, 'w', encoding='utf-8') as f:
         f.write(f"# Project Analysis: {target_path.name}\n\n")
         f.write(f"**Type**: {analysis.project_type}\n**Language**: {analysis.language}\n**Path**: `{target_path}`\n\n")
         
         f.write("## Architecture\n")
-        for arch in analysis.architecture: f.write(f"- {arch}\n")
-        if not analysis.architecture: f.write("No architectural patterns detected.\n")
+        for arch in analysis.architecture:
+            f.write(f"- {arch}\n")
+        if not analysis.architecture:
+            f.write("No architectural patterns detected.\n")
         
         f.write("\n## Entry Points\n")
-        for ep in analysis.entry_points: f.write(f"- `{ep}`\n")
+        for ep in analysis.entry_points:
+            f.write(f"- `{ep}`\n")
         
         f.write("\n## Configuration Files\n")
-        for cf in analysis.config_files: f.write(f"- `{cf}`\n")
+        for cf in analysis.config_files:
+            f.write(f"- `{cf}`\n")
         
         f.write("\n## Dependencies\n")
         f.write(f"### Direct ({len(analysis.dependencies.get('direct', []))})\n")
-        for dep in analysis.dependencies.get('direct', []): f.write(f"- {dep}\n")
+        for dep in analysis.dependencies.get('direct', []):
+            f.write(f"- {dep}\n")
         f.write(f"\n### Dev ({len(analysis.dependencies.get('dev', []))})\n")
-        for dep in analysis.dependencies.get('dev', []): f.write(f"- {dep}\n")
+        for dep in analysis.dependencies.get('dev', []):
+            f.write(f"- {dep}\n")
         
         f.write("\n## File Statistics\n")
         for ext, count in sorted(analysis.file_stats.items(), key=lambda x: x[1], reverse=True):

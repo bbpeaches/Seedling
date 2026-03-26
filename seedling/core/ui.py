@@ -21,7 +21,9 @@ def setup_ui_theme(no_emoji: bool = False) -> None:
     """根据环境设置 UI 主题"""
     is_old_windows = False
     try:
-        is_old_windows = sys.platform == "win32" and os.get_terminal_size().columns < 10
+        if sys.platform == "win32":
+            if os.get_terminal_size().columns < 10:
+                is_old_windows = True
     except OSError:
         pass
     
@@ -41,10 +43,14 @@ def ensure_utf8_output() -> None:
         for stream_name in ('stdout', 'stderr'):
             try:
                 stream = getattr(sys, stream_name)
-                if stream and hasattr(stream, 'buffer') and stream.buffer:
-                    setattr(sys, stream_name, io.TextIOWrapper(
-                        stream.buffer, encoding='utf-8', line_buffering=True
-                    ))
+                if stream:
+                    if hasattr(stream, 'buffer'):
+                        if stream.buffer:
+                            setattr(sys, stream_name, io.TextIOWrapper(
+                                stream.buffer, 
+                                encoding='utf-8', 
+                                line_buffering=True
+                            ))
             except Exception:
                 # 重定向失败，静默处理
                 pass
@@ -53,15 +59,20 @@ def ask_yes_no(prompt_text: str, default_no: bool = True) -> bool:
     """交互式确认提示"""
     if not sys.stdin.isatty():
         logger.warning("\n⚠️ Non-interactive terminal detected: defaulting to 'no' to prevent blocking.")
-        return False if default_no else True
+        if default_no:
+            return False
+        else:
+            return True
 
     while True:
         try:
             ans = input(prompt_text).strip().lower()
             if ans in ['y', 'yes']:
                 return True
+            
             if ans in ['n', 'no']:
                 return False
+                
             print("⚠️ Invalid input. Please enter 'y' or 'n'.")
         except EOFError:
             logger.warning("\n⚠️ Input stream closed (EOF): defaulting to 'no'.")
@@ -83,6 +94,7 @@ def _get_state_file(tool_name: str) -> Path:
         ppid = os.getppid()
     except AttributeError:
         ppid = "default"
+        
     temp_dir = Path(tempfile.gettempdir())
     return temp_dir / f"seedling_session_{ppid}_{tool_name}.state"
 
@@ -92,12 +104,17 @@ def _get_and_increment_run_count(tool_name: str) -> int:
     count = 0
     try:
         if state_file.exists():
-            count = int(state_file.read_text().strip())
-    except Exception: pass
+            count_str = state_file.read_text().strip()
+            count = int(count_str)
+    except Exception:
+        pass
+        
     count += 1
     try:
         state_file.write_text(str(count))
-    except Exception: pass
+    except Exception:
+        pass
+        
     return count
 
 # --- 欢迎与彩蛋 ---
@@ -122,6 +139,7 @@ def print_welcome_message():
 def handle_empty_run():
     """彩蛋"""
     count = _get_and_increment_run_count("scan")
+    
     if count == 1:
         print_welcome_message()
     elif count == 2:
@@ -143,13 +161,16 @@ def handle_empty_run():
                 sys.stdout.flush()
                 time.sleep(0.1)
             print("] 100% Done!")
+            
     sys.exit(0)
 
 def handle_empty_build_run():
     """彩蛋"""
     count = _get_and_increment_run_count("build")
+    
     if count == 1:
         print("\n🏗️  Welcome to Build mode! Give me a blueprint file (.md/.txt).")
     else:
         print(f"\n👷 Chief, that's {count} empty calls! The workers are on break. 🃏")
+        
     sys.exit(0)

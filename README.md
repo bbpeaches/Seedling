@@ -49,21 +49,18 @@ You can now use Seedling's core features directly in your Python code via the `S
 
 ```python
 import seedling
-from seedling.core.filesystem import ScanConfig
+from seedling.core.config import ScanConfig
+from seedling.core.traversal import traverse_directory, build_tree_lines
 
-# 1. Initialize configuration (Set quiet=True to suppress CLI progress bars)
+# Initialize Configuration
 config = ScanConfig(max_depth=2, quiet=True)
 
-# 2. Generate directory tree lines
-stats = {"dirs": 0, "files": 0}
-lines = seedling.scan_dir_lines("./src", config, stats)
+# Taking Memory Snapshots
+result = traverse_directory("./src", config)
+
+# Render tree lines
+lines = build_tree_lines(result, config)
 print("\n".join(lines))
-
-# 3. Search for specific items programmatically
-exact, fuzzy = seedling.search_items(".", keyword="utils", config=config)
-
-# 4. Reconstruct a project from a blueprint
-seedling.build_structure_from_file("blueprint.md", "./new_project")
 ```
 
 ---

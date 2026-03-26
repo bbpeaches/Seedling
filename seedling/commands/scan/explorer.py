@@ -9,7 +9,11 @@ from .json_output import build_json_structure, write_json, build_json_with_conte
 
 def run_explorer(args, target_path: Path, config: ScanConfig, result: TraversalResult):
     """默认探索命令"""
-    out_dir_path = Path(args.outdir).resolve() if args.outdir else Path.cwd()
+    if args.outdir:
+        out_dir_path = Path(args.outdir).resolve()
+    else:
+        out_dir_path = Path.cwd()
+    
     out_dir_path.mkdir(parents=True, exist_ok=True)
     target_name = target_path.name or "root_dir"
 

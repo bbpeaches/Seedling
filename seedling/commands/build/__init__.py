@@ -46,7 +46,10 @@ def handle_build(args):
         sys.exit(0)
 
     target_provided = args.target is not None
-    target_dir = Path(args.target).resolve() if target_provided else Path(".").resolve()
+    if target_provided:
+        target_dir = Path(args.target).resolve()
+    else:
+        target_dir = Path(".").resolve()
     
     # 意图推测拦截
     if not source_file.exists():

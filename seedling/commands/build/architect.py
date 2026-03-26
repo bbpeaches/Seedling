@@ -7,10 +7,10 @@ from seedling.core.logger import logger
 
 def calculate_depth(prefix):
     """计算当前节点的实际嵌套层级深度"""
-    if not prefix: return 0
-    # 将各类树状连接符替换为空格，以统一计算视觉缩进宽度
+    if not prefix: 
+        return 0
     clean_prefix = prefix.replace('│', ' ').replace('├', ' ').replace('└', ' ').replace('─', ' ')
-    return len(clean_prefix) // 4  # 默认按照 4 个字符宽度划分一个树状层级
+    return len(clean_prefix) // 4  
 
 def build_structure_from_file(source_file, target_dir, check_mode=False, force_mode=False):
     """解析纯文本蓝图与代码块"""
@@ -26,9 +26,9 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
     # Safe Parsing Phase
     raw_parsed_items = []
     for line in tree_lines:
-        # 剥离树状图的连接前缀与节点实际内容
         match = re.match(r'^([│├└─\s]*)(.+)$', line)
-        if not match: continue
+        if not match: 
+            continue
             
         prefix, content = match.groups()
         depth = calculate_depth(prefix)
@@ -38,7 +38,8 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
         
         # 目录识别
         is_dir = clean_name.endswith('/')
-        if is_dir: clean_name = clean_name.rstrip('/')
+        if is_dir: 
+            clean_name = clean_name.rstrip('/')
             
         if clean_name and clean_name not in ['.', '..']: 
             raw_parsed_items.append({'depth': depth, 'name': clean_name, 'is_dir': is_dir})
@@ -88,13 +89,17 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
         
         # 检查结构声明节点
         for item in parsed_items:
-            if item['safe_path'].exists(): existing.add(item['safe_path'])
-            else: missing.add(item['safe_path'])
+            if item['safe_path'].exists(): 
+                existing.add(item['safe_path'])
+            else: 
+                missing.add(item['safe_path'])
             
         # 检查代码块声明节点
         for rel_path, (p, content) in safe_file_contents.items():
-            if p.exists(): existing.add(p)
-            else: missing.add(p)
+            if p.exists(): 
+                existing.add(p)
+            else: 
+                missing.add(p)
             
         logger.info(f"   - 🟢 Already Exists: {len(existing)} items")
         logger.info(f"   - 🔴 Missing (Will create): {len(missing)} items")
@@ -145,11 +150,15 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
                         
                     if content_to_write:
                         populated_count += 1
-                        if is_overwrite: logger.warning(f" ⚠️  Overwritten+Data: 📄 {rel_path}")
-                        else: logger.info(f" 🪄 Restored Data:    📄 {rel_path}")
+                        if is_overwrite: 
+                            logger.warning(f" ⚠️  Overwritten+Data: 📄 {rel_path}")
+                        else: 
+                            logger.info(f" 🪄 Restored Data:    📄 {rel_path}")
                     else:
-                        if is_overwrite: logger.warning(f" ⚠️  Overwritten:      📄 {rel_path}")
-                        else: logger.info(f" ✨ Created Empty:    📄 {rel_path}")
+                        if is_overwrite: 
+                            logger.warning(f" ⚠️  Overwritten:      📄 {rel_path}")
+                        else: 
+                            logger.info(f" ✨ Created Empty:    📄 {rel_path}")
                     files_created += 1
         except Exception as e:
             logger.error(f" Failed to create '{item['name']}': {e}")
@@ -167,8 +176,10 @@ def build_structure_from_file(source_file, target_dir, check_mode=False, force_m
                         f.write(content)
                     populated_count += 1
                     files_created += 1
-                    if is_overwrite: logger.warning(f" ⚠️  Overwritten+Data: 📄 {posix_rel} (from source block)")
-                    else: logger.info(f" 🪄 Restored Data:    📄 {posix_rel} (from source block)")
+                    if is_overwrite: 
+                        logger.warning(f" ⚠️  Overwritten+Data: 📄 {posix_rel} (from source block)")
+                    else: 
+                        logger.info(f" 🪄 Restored Data:    📄 {posix_rel} (from source block)")
             except Exception as e:
                 logger.error(f" Failed to restore '{posix_rel}': {e}")
             
