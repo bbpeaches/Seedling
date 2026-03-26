@@ -1,3 +1,7 @@
+"""
+Unified traversal engine with caching for Seedling.
+Provides single-pass directory traversal to avoid redundant I/O.
+"""
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -40,7 +44,8 @@ class TraversalResult:
         # 如果缓存中没有该文件，则读取并存入缓存
         if item.path not in self._content_cache:
             self._content_cache[item.path] = _safe_read_text_cached(
-                item.path, quiet=quiet
+                item.path, 
+                quiet=quiet
             )
         return self._content_cache[item.path]
 
@@ -48,7 +53,11 @@ class TraversalResult:
         """是否可以在内存限制范围内继续添加文件内容"""
         if self._mem_limit == 0: # 上限为0代表无内存限制
             return True
-        return self._mem_usage + estimated_size <= self._mem_limit
+        
+        if self._mem_usage + estimated_size <= self._mem_limit:
+            return True
+        else:
+            return False
 
     def add_to_cache(self, path: Path, content: Optional[str], size: int):
         """添加缓存并更新当前的内存占用"""
@@ -74,6 +83,7 @@ def _safe_read_text_cached(file_path: Path, quiet: bool = False) -> Optional[str
     # 记录警告
     if not quiet:
         logger.warning(f"Skipped {file_path.name}: Unsupported encoding.")
+        
     return None
 
 
@@ -88,7 +98,11 @@ def traverse_directory(
 
     # 如果开启了收集文件内容，则初始化内存限制
     if collect_content:
-        limit_mb = content_limit_mb or get_system_mem_limit_mb()
+        if content_limit_mb:
+            limit_mb = content_limit_mb
+        else:
+            limit_mb = get_system_mem_limit_mb()
+            
         result._mem_limit = int(limit_mb * 1024 * 1024 * 0.8)  
 
     base_dir = dir_path.resolve()
@@ -98,8 +112,10 @@ def traverse_directory(
 
     while stack:
         curr, depth = stack.pop()
-        if config.max_depth is not None and depth > config.max_depth:
-            continue
+        
+        if config.max_depth is not None:
+            if depth > config.max_depth:
+                continue
 
         if depth > HARD_DEPTH_LIMIT:
             logger.warning(f"System max depth reached at {curr}")
@@ -162,20 +178,22 @@ def traverse_directory(
                 if total % 15 == 0:
                     print_progress_bar(total, label="Scanning", quiet=config.quiet)
 
-                if item.is_dir() and not item.is_symlink():
-                    # 压栈前预先检查深度
-                    if config.max_depth is not None and item_depth >= config.max_depth:
-                        continue
+                if item.is_dir():
+                    if not item.is_symlink():
+                        # 压栈前预先检查深度
+                        if config.max_depth is not None:
+                            if item_depth >= config.max_depth:
+                                continue
 
-                    try:
-                        real_path = item.resolve(strict=True)
-                        if real_path in seen_real_paths:
-                            continue  # 避免死循环递归
-                        seen_real_paths.add(real_path)
-                    except Exception:
-                        pass
+                        try:
+                            real_path = item.resolve(strict=True)
+                            if real_path in seen_real_paths:
+                                continue  # 避免死循环递归
+                            seen_real_paths.add(real_path)
+                        except Exception:
+                            pass
 
-                    stack.append((item, item_depth))
+                        stack.append((item, item_depth))
 
         except PermissionError:
             pass # 忽略没有读取权限的目录
@@ -191,13 +209,14 @@ def build_tree_lines(result: TraversalResult, config: ScanConfig, root_path: Opt
         return lines
 
     # 如果没有指定根路径，则尝试从已有的项目列表中推导出来
-    if root_path is None and result.items:
-        # 查找深度最浅的项，获取它们的共同父目录作为根目录
-        min_depth = min(item.depth for item in result.items)
-        root_level_items = [item for item in result.items if item.depth == min_depth]
-        if root_level_items:
-            # 顶级项目的父目录即为根目录
-            root_path = root_level_items[0].path.parent
+    if root_path is None:
+        if result.items:
+            # 查找深度最浅的项，获取它们的共同父目录作为根目录
+            min_depth = min(item.depth for item in result.items)
+            root_level_items = [item for item in result.items if item.depth == min_depth]
+            if root_level_items:
+                # 顶级项目的父目录即为根目录
+                root_path = root_level_items[0].path.parent
 
     # 将所有项目按照其父目录进行分组，用于分层渲染
     items_by_parent: Dict[Path, List[TraversalItem]] = {}
@@ -214,11 +233,30 @@ def build_tree_lines(result: TraversalResult, config: ScanConfig, root_path: Opt
         items.sort(key=lambda x: (not x.is_dir, x.path.name.lower()))
 
         for i, item in enumerate(items):
-            is_last = (i == len(items) - 1)
-            connector = "└── " if is_last else "├── "
-            symlink_mark = " (symlink)" if item.is_symlink else ""
-            match_mark = " 🎯 [MATCHED]" if item.path in config.highlights else ""
-            display_name = f"{item.path.name}/" if item.is_dir else item.path.name
+            if i == len(items) - 1:
+                is_last = True
+            else:
+                is_last = False
+            
+            if is_last:
+                connector = "└── "
+            else:
+                connector = "├── "
+            
+            if item.is_symlink:
+                symlink_mark = " (symlink)"
+            else:
+                symlink_mark = ""
+                
+            if item.path in config.highlights:
+                match_mark = " 🎯 [MATCHED]"
+            else:
+                match_mark = ""
+                
+            if item.is_dir:
+                display_name = f"{item.path.name}/"
+            else:
+                display_name = item.path.name
 
             lines.append(f"{prefix}{connector}{display_name}{symlink_mark}{match_mark}")
 
@@ -226,12 +264,16 @@ def build_tree_lines(result: TraversalResult, config: ScanConfig, root_path: Opt
             if item.is_dir:
                 children = items_by_parent.get(item.path, [])
                 if children:
-                    new_prefix = prefix + ("    " if is_last else "│   ")
+                    if is_last:
+                        new_prefix = prefix + "    "
+                    else:
+                        new_prefix = prefix + "│   "
                     _build_subtree(children, new_prefix)
 
     # 从根级项目开始构建树
-    if root_path and root_path in items_by_parent:
-        root_items = items_by_parent[root_path]
-        _build_subtree(root_items)
+    if root_path:
+        if root_path in items_by_parent:
+            root_items = items_by_parent[root_path]
+            _build_subtree(root_items)
 
     return lines

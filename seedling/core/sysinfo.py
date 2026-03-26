@@ -14,10 +14,12 @@ def get_system_mem_limit_mb():
                     if 'MemTotal' in line:
                         total_mb = int(line.split()[1]) / 1024
                         break
+                        
         elif system == "Darwin": # macOS
             import subprocess
             out = subprocess.check_output(['sysctl', '-n', 'hw.memsize']).decode('utf-8')
             total_mb = int(out.strip()) / (1024 * 1024)
+            
         elif system == "Windows":
             import ctypes
             class MEMORYSTATUSEX(ctypes.Structure):
@@ -35,12 +37,17 @@ def get_system_mem_limit_mb():
             stat = MEMORYSTATUSEX()
             stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
             windll = getattr(ctypes, "windll", None)
+            
             if windll is not None:
                 windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
                 total_mb = stat.ullTotalPhys / (1024 * 1024)
 
         if total_mb > 0:
-            return max(32, int(total_mb * 0.10))
+            limit = int(total_mb * 0.10)
+            if limit < 32:
+                return 32
+            else:
+                return limit
             
     except Exception:
         pass
@@ -49,4 +56,8 @@ def get_system_mem_limit_mb():
 
 def get_system_depth_limit():
     """深度上限"""
-    return max(100, sys.getrecursionlimit() - 100)
+    limit = sys.getrecursionlimit() - 100
+    if limit < 100:
+        return 100
+    else:
+        return limit

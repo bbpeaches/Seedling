@@ -26,7 +26,11 @@ def grep_files(
 ) -> List[GrepMatch]:
     """搜索关键词或正则"""
     matches: List[GrepMatch] = []
-    regex_flags = re.IGNORECASE if ignore_case else 0
+    
+    if ignore_case:
+        regex_flags = re.IGNORECASE
+    else:
+        regex_flags = 0
 
     if config.use_regex:
         try:
@@ -69,21 +73,27 @@ def format_grep_output(matches: List[GrepMatch], show_context: bool) -> str:
     """格式化为纯文本"""
     lines = []
     for m in matches:
-        if show_context and m.context_before:
-            for i, ctx in enumerate(m.context_before):
-                lines.append(f"  {m.line_number - len(m.context_before) + i}-\t{ctx}")
+        if show_context:
+            if m.context_before:
+                for i, ctx in enumerate(m.context_before):
+                    lines.append(f"  {m.line_number - len(m.context_before) + i}-\t{ctx}")
                 
         lines.append(f">>> {m.relative_path}:{m.line_number}\t{m.line_content}")
         
-        if show_context and m.context_after:
-            for i, ctx in enumerate(m.context_after):
-                lines.append(f"  {m.line_number + i + 1}-\t{ctx}")
+        if show_context:
+            if m.context_after:
+                for i, ctx in enumerate(m.context_after):
+                    lines.append(f"  {m.line_number + i + 1}-\t{ctx}")
     return "\n".join(lines)
 
 def run_grep(args, target_path: Path, config: ScanConfig, result: TraversalResult):
     """Grep主控逻辑"""
     ignore_case = getattr(args, 'ignore_case', False)
-    case_mode = "case-insensitive" if ignore_case else "case-sensitive"
+    
+    if ignore_case:
+        case_mode = "case-insensitive"
+    else:
+        case_mode = "case-sensitive"
     
     logger.info(f"Searching for '{args.grep_pattern}' ({case_mode})...")
     matches = grep_files(result, args.grep_pattern, config, args.context, ignore_case)
@@ -98,9 +108,18 @@ def run_grep(args, target_path: Path, config: ScanConfig, result: TraversalResul
     print(format_grep_output(matches, args.context > 0))
 
     if args.full or args.format != 'md':
-        out_dir = Path(args.outdir).resolve() if args.outdir else Path.cwd()
+        if args.outdir:
+            out_dir = Path(args.outdir).resolve()
+        else:
+            out_dir = Path.cwd()
+            
         out_dir.mkdir(parents=True, exist_ok=True)
-        ext = '.json' if args.format == 'json' else '.md'
+        
+        if args.format == 'json':
+            ext = '.json'
+        else:
+            ext = '.md'
+            
         out_file = out_dir / f"{target_path.name}_grep{ext}"
 
         if not check_overwrite_safely(out_file):
@@ -131,7 +150,13 @@ def run_grep(args, target_path: Path, config: ScanConfig, result: TraversalResul
             with open(out_file, 'w', encoding='utf-8') as f:
                 f.write(f"# Grep Results: `{args.grep_pattern}`\n\n")
                 f.write(f"**Target**: `{target_path}`\n\n")
-                f.write(f"**Mode**: {'Case-insensitive' if ignore_case else 'Case-sensitive'}\n\n")
+                
+                if ignore_case:
+                    mode_str = 'Case-insensitive'
+                else:
+                    mode_str = 'Case-sensitive'
+                    
+                f.write(f"**Mode**: {mode_str}\n\n")
                 f.write(f"**Stats**: {len(matches)} matches in {unique_files} files\n\n")
                 f.write("```\n")
                 f.write(format_grep_output(matches, args.context > 0))

@@ -49,21 +49,18 @@ pipx install -e . --force
 
 ```python
 import seedling
-from seedling.core.filesystem import ScanConfig
+from seedling.core.config import ScanConfig
+from seedling.core.traversal import traverse_directory, build_tree_lines
 
-# 1. 初始化配置 (设置 quiet=True 以屏蔽 CLI 进度条输出)
+# 初始化配置
 config = ScanConfig(max_depth=2, quiet=True)
 
-# 2. 生成目录树行
-stats = {"dirs": 0, "files": 0}
-lines = seedling.scan_dir_lines("./src", config, stats)
+# 获取内存快照
+result = traverse_directory("./src", config)
+
+# 渲染树状线条
+lines = build_tree_lines(result, config)
 print("\n".join(lines))
-
-# 3. 编程式搜索特定项目
-exact, fuzzy = seedling.search_items(".", keyword="utils", config=config)
-
-# 4. 从蓝图重建项目
-seedling.build_structure_from_file("blueprint.md", "./new_project")
 ```
 
 -----

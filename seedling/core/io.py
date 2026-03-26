@@ -54,6 +54,7 @@ def extract_tree_block(file_path):
             
         # 是否包含目录树符号
         has_tree_chars = any(c in line for c in ['├──', '└──', '│'])
+        
         next_has_tree_chars = False
         if i + 1 < len(lines):
             next_has_tree_chars = any(c in lines[i+1] for c in ['├──', '└──', '│'])
@@ -64,8 +65,12 @@ def extract_tree_block(file_path):
             if not stripped.startswith('```'): 
                 tree_lines.append(stripped)
         elif in_tree:
-            if stripped.startswith('```') or not has_tree_chars: 
+            if stripped.startswith('```'):
+                break
+            
+            if not has_tree_chars: 
                 break 
+                
     return tree_lines
 
 def extract_file_contents(file_path):
@@ -83,32 +88,38 @@ def extract_file_contents(file_path):
     current_fence = None      # 当前代码块的围栏符号
 
     for line in lines:
-        if not in_code_block and line.startswith('### FILE: '):
-            raw_path = line.replace('### FILE: ', '').strip()
-            current_file = PureWindowsPath(raw_path).as_posix()
-            # 重置内容缓存
-            current_content = []
-            in_code_block = False
-            current_fence = None
-            continue
+        if not in_code_block:
+            if line.startswith('### FILE: '):
+                raw_path = line.replace('### FILE: ', '').strip()
+                current_file = PureWindowsPath(raw_path).as_posix()
+                # 重置内容缓存
+                current_content = []
+                in_code_block = False
+                current_fence = None
+                continue
             
         # 解析内容
         if current_file:
             stripped_line = line.strip()
 
-            if stripped_line.startswith('```') and not in_code_block:
-                in_code_block = True
-                match = re.match(r'^`+', stripped_line)
-                current_fence = match.group() if match else '```'
-                continue
+            if stripped_line.startswith('```'):
+                if not in_code_block:
+                    in_code_block = True
+                    match = re.match(r'^`+', stripped_line)
+                    if match:
+                        current_fence = match.group()
+                    else:
+                        current_fence = '```'
+                    continue
                 
-            elif in_code_block and stripped_line == current_fence:
-                in_code_block = False
-                file_contents[current_file] = "".join(current_content)
-                # 重置当前文件状态
-                current_file = None
-                current_fence = None
-                continue
+            if in_code_block:
+                if stripped_line == current_fence:
+                    in_code_block = False
+                    file_contents[current_file] = "".join(current_content)
+                    # 重置当前文件状态
+                    current_file = None
+                    current_fence = None
+                    continue
                 
             # 代码块内的内容，添加到缓存
             if in_code_block:
@@ -220,15 +231,16 @@ def _try_fontconfig_discovery(font_size: int):
         )
 
         # 加载第一个可用的中文字体
-        if result.returncode == 0 and result.stdout.strip():
-            for line in result.stdout.strip().split('\n')[:10]:
-                font_path = line.split(':')[0].strip()
-                if font_path:
-                    try:
-                        from PIL import ImageFont # type: ignore
-                        return ImageFont.truetype(font_path, font_size)
-                    except IOError:
-                        continue
+        if result.returncode == 0:
+            if result.stdout.strip():
+                for line in result.stdout.strip().split('\n')[:10]:
+                    font_path = line.split(':')[0].strip()
+                    if font_path:
+                        try:
+                            from PIL import ImageFont # type: ignore
+                            return ImageFont.truetype(font_path, font_size)
+                        except IOError:
+                            continue
 
         # 备用查找等宽字体
         result = subprocess.run(
@@ -238,15 +250,16 @@ def _try_fontconfig_discovery(font_size: int):
             timeout=5
         )
 
-        if result.returncode == 0 and result.stdout.strip():
-            for line in result.stdout.strip().split('\n')[:5]:
-                font_path = line.split(':')[0].strip()
-                if font_path:
-                    try:
-                        from PIL import ImageFont # type: ignore
-                        return ImageFont.truetype(font_path, font_size)
-                    except IOError:
-                        continue
+        if result.returncode == 0:
+            if result.stdout.strip():
+                for line in result.stdout.strip().split('\n')[:5]:
+                    font_path = line.split(':')[0].strip()
+                    if font_path:
+                        try:
+                            from PIL import ImageFont # type: ignore
+                            return ImageFont.truetype(font_path, font_size)
+                        except IOError:
+                            continue
 
     except (subprocess.TimeoutExpired, FileNotFoundError, ImportError):
         pass

@@ -46,12 +46,26 @@ def run_skeleton(args, target_path: Path, config: ScanConfig, result: TraversalR
     """主控逻辑"""
     logger.info(f"Extracting Python code structure from {target_path}...")
     
-    out_dir_path = Path(args.outdir).resolve() if args.outdir else Path.cwd()
+    if args.outdir:
+        out_dir_path = Path(args.outdir).resolve()
+    else:
+        out_dir_path = Path.cwd()
+        
     out_dir_path.mkdir(parents=True, exist_ok=True)
-    out_name = args.name or f"{target_path.name or 'root'}_skeleton.md"
+    
+    if args.name:
+        out_name = args.name
+    else:
+        if target_path.name:
+            root_label = target_path.name
+        else:
+            root_label = 'root'
+        out_name = f"{root_label}_skeleton.md"
+        
     final_file = out_dir_path / out_name
 
-    if not check_overwrite_safely(final_file): return 
+    if not check_overwrite_safely(final_file): 
+        return 
 
     sections = ["\n\n" + "="*60, "🦴 PROJECT CODE SKELETON", "="*60 + "\n"]
     py_files_processed = 0

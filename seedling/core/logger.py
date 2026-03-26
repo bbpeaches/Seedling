@@ -21,6 +21,7 @@ class CLIFormatter(logging.Formatter):
 def configure_logging(verbose=False, quiet=False):
     """初始化并配置全局logger"""
     level = logging.INFO
+    
     if verbose: 
         level = logging.DEBUG
     elif quiet: 
