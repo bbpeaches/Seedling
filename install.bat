@@ -1,4 +1,6 @@
 @echo off
+:: Seedling-tools CLI Installer
+:: Copyright (c) 2026 Kaelen Chow. MIT License.
 setlocal enabledelayedexpansion
 
 echo =========================================
