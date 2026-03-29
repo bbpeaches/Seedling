@@ -1,4 +1,6 @@
 #!/bin/bash
+# Seedling-tools CLI Installer
+# Copyright (c) 2026 Kaelen Chow. All rights reserved.  
 
 echo "========================================="
 echo "         Seedling Installer"
